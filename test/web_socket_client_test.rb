@@ -4,7 +4,7 @@ require 'websocket-eventmachine-client'
 require 'pp'
 require 'json'
 EM.run do
-  ws = WebSocket::EventMachine::Client.connect(:uri => 'ws://127.0.0.1:3000/cable',headers: {connect_token: "batu1"})
+  ws = WebSocket::EventMachine::Client.connect(:uri => 'ws://127.0.0.1:3000/cable',headers: {msmi_token:  "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoidXNlcl9pZCIsInVzZXJfbmFtZSI6InVzZXJfbmFtZSIsImF2YXRhcl91cmwiOiJhdmF0YXJfdXJsIiwiYXBwX2lkIjoibWFwcGxheSJ9.6p_6c53u5bC7RZEBPpQJPLOLSHh4PFUJCdmbxttY6uo"})
   ws.onopen do
     ws.send "{\"identifier\":\"{\\\"channel\\\":\\\"OnlineChannel\\\"}\",\"command\":\"subscribe\"}"
   end

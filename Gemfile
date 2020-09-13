@@ -34,6 +34,12 @@ gem 'grape-entity', '~> 0.7.1'
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
 
+# 生成mstoken
+gem 'jwt', '~> 2.2.1'
+
+# 可以从一个或多个数字生成类似YouTube的ID。https://github.com/peterhellberg/hashids.rb
+gem 'hashids', '~> 1.0.5'
+
 # Use ActiveStorage variant
 # gem 'mini_magick', '~> 4.8'
 

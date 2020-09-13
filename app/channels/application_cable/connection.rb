@@ -1,10 +1,10 @@
 module ApplicationCable
   class Connection < ActionCable::Connection::Base
+  	include ApplicationHelper
   	identified_by :current_user
   	def connect 
-  		# 验证身份，找不到用户，不能创建socket
-  		# 把头里的mstoken拿出来转成user,通过current_user对连接identified赋值
-      self.current_user = [env['HTTP_CONNECT_TOKEN'],'haha']
+  		authenticate_user env['HTTP_MSMI_TOKEN']
+      self.current_user = current_user || reject_unauthorized_connection
     end
   end
 end

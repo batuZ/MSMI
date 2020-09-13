@@ -31,3 +31,6 @@
 /config/master.key
 
 .rspec
+*/*/.DS_Store
+
+*.lock
