@@ -21,13 +21,17 @@
 	``` 
 
 * 通过api创建用户token[管理员]
-	`post: 127.0.0.1:3000/user/token?user_id=Identifier&user_name=Tom&avatar_url=https:xxx.xxx.com/xx.jpg&app_id=APP_NAME`
+	```ruby
+	post: 127.0.0.1:3000/user/token?user_id=Identifier&user_name=Tom&avatar_url=https:xxx.xxx.com/xx.jpg&app_id=APP_NAME
+	```
 
 * 通过api发送消息[用户]
-	`post: 127.0.0.1:3000/message?tag_id=Identifier&text=message`
+	```ruby
+	post: 127.0.0.1:3000/message?tag_id=Identifier&text=message
+	```
 
 * wedsocket
-	`
+	```ruby
 	参考：https://github.com/imanel/websocket-eventmachine-client
 	
 	require 'websocket'
@@ -55,5 +59,5 @@
 	    ws.send ss
 	  end
 	end
-`
+```
 
