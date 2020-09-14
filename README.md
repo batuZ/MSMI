@@ -26,7 +26,8 @@
 
 * wedsocket
 	`
-	# https://github.com/imanel/websocket-eventmachine-client
+	参考：https://github.com/imanel/websocket-eventmachine-client
+	
 	require 'websocket'
 	require 'websocket-eventmachine-client'
 	require 'pp'
