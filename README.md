@@ -65,7 +65,9 @@
 	end
 ```
 
-#### TODO:
+TODO:
+
 * group message
 * manager pages
-* 
+* notifications
+* image|video|file message
