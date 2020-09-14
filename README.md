@@ -1,24 +1,14 @@
-# README
+# MSMI
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+基于Rails\Grape\Redis的轻量即时通讯服务器
 
-Things you may want to cover:
+特征:
 
-* Ruby version
+* 无数关系据库
 
-* System dependencies
+* API发送，WebSocket接收
 
-* Configuration
+* 离线消息、通知补发
 
-* Database creation
+* Rails web管理后台
 
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
