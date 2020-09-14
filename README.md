@@ -16,7 +16,9 @@
 流程：
 
 * 通过api创建应用组[管理员]
-	`post: 127.0.0.1:3000/app?app_name=APP_NAME` 
+	```ruby
+	post: 127.0.0.1:3000/app?app_name=APP_NAME
+	``` 
 
 * 通过api创建用户token[管理员]
 	`post: 127.0.0.1:3000/user/token?user_id=Identifier&user_name=Tom&avatar_url=https:xxx.xxx.com/xx.jpg&app_id=APP_NAME`
@@ -34,7 +36,8 @@
 	require 'json'
 	EM.run do
 		# 建立连接,并验证user_token
-	  ws = WebSocket::EventMachine::Client.connect(:uri => 'ws://127.0.0.1:3000/cable',headers: {msmi_token:  "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoidXNlcl9pZCIsInVzZXJfbmFtZSI6InVzZXJfbmFtZSIsImF2YXRhcl91cmwiOiJhdmF0YXJfdXJsIiwiYXBwX2lkIjoibWFwcGxheSJ9.6p_6c53u5bC7RZEBPpQJPLOLSHh4PFUJCdmbxttY6uo"})
+	  ws = WebSocket::EventMachine::Client.connect(:uri => 'ws://127.0.0.1:3000/cable',headers: {msmi_token:  "user_token"})
+	  
 	  # 订阅用户上线频道
 	  ws.onopen do
 	    ws.send "{\"identifier\":\"{\\\"channel\\\":\\\"OnlineChannel\\\"}\",\"command\":\"subscribe\"}"
