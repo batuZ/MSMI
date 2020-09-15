@@ -23,6 +23,8 @@ class OnlineChannel < ApplicationCable::Channel
   end
 
   # 接收用户消息
-  def user_message(data)
+  def user_receipt(data)
+    pp "----->>>>> #{data['params']}"
   end
+
 end
