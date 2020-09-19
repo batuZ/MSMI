@@ -65,6 +65,9 @@
 	end
 ```
 
+### Android client demo: 
+	https://github.com/batuZ/MSMI_Client
+	
 TODO:
 
 * group message
