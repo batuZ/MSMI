@@ -38,13 +38,20 @@ gem 'grape-entity', '~> 0.7.1'
 gem 'jwt', '~> 2.2.1'
 
 # 可以从一个或多个数字生成类似YouTube的ID。https://github.com/peterhellberg/hashids.rb
-gem 'hashids', '~> 1.0.5'
+# gem 'hashids', '~> 1.0.5'
+
+gem 'uuidtools'
 
 # Use ActiveStorage variant
 # gem 'mini_magick', '~> 4.8'
 
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development
+
+# 在centOS中rails需要Javascript runtime支持数据库操作
+install_if -> { RUBY_PLATFORM =~ /linux/ } do
+  gem 'therubyracer',  platforms: :ruby 
+end
 
 # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', '>= 1.1.0', require: false

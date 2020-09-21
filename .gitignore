@@ -32,9 +32,8 @@
 
 .rspec
 */*/.DS_Store
-
 *.lock
-
 nohup.out
-
 dump.rdb
+sftp-config.json
+/Gemfile.lock

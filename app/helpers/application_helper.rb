@@ -15,12 +15,17 @@ module ApplicationHelper
 		JWT.decode(token, 'test_hash_key')
 	end
 
+  # 判断app是否有效
+  def app? app_name
+    redis.hexists 'apps', app_name
+  end
+
 	# 验证token，获取用户
   def authenticate_user!
   	begin
   		@current_user, _  = decode_token(headers['Msmi-Token']) # 找不到会抛异常
       msErr!('用户身份未通过验证', 1007) if @current_user.nil? 
-      msErr!('app_id未通过验证', 1006) unless redis_app.sismember('app_names', @current_user['app_id'])
+      msErr!('app_id未通过验证', 1006) unless app?(@current_user['app_id'])
     rescue StandardError
     end
   end
@@ -46,28 +51,19 @@ module ApplicationHelper
   	throw :error, message: {ms_message: msg, ms_code: code}, status: 200, headers: header
   end
 
-  def ms_send tag, msg
-    send_to = "#{current_user['app_id']}_#{tag}_online"
-    send_data = {
-      from_id: current_user['user_id'],
-      from_name: current_user['user_id'],
-      from_avatar: current_user['user_id'],
-      from_time: Time.now.to_i,
-      content: msg
-    }
-    send_res = ActionCable.server.broadcast(send_to, send_data) 
-    if send_res == 0
-      hold = {send_to: send_to, send_data: send_data }
-      redis_msg.setex("#{Time.now.to_i}_#{send_to}", 1.hour.to_i, hold.to_json)
-    end
+  # redis对象
+  def redis
+    @redis ||= Redis.new(driver: :hiredis, url: ActionCable.server.config.cable[:url])
   end
 
-  def redis_app
-    @redis_app ||= Redis.new(driver: :hiredis, db: 1)
+  # 获取app信息
+  def app_info app_name
+     JSON.parse(redis.hget('apps', app_name))
   end
 
-  def redis_msg
-    @redis_msg ||= Redis.new(driver: :hiredis, db: 2)
+  # 获取群信息
+  def group_info app_id, group_id
+    JSON.parse(redis.hget("#{app_id}:groups", group_id))
   end
 
 end

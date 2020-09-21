@@ -4,8 +4,33 @@ require 'websocket-eventmachine-client'
 require 'pp'
 require 'json'
 
+建国 = {
+  user_id: 'Daogelasi_JianGuo',
+  user_name: '道格拉斯·建国',
+  avatar_url: 'https://images.12306.com/avatar/img_3617.jpg',
+  app_id: 'mapplay'
+} 
+
+淑芬 = {
+  user_id: 'Nigulash_ShuFen',
+  user_name: '尼古拉斯·淑芬',
+  avatar_url: 'https://images.12306.com/avatar/img_9983.jpg',
+  app_id: 'mapplay'
+} 
+
+铁蛋 = {
+  user_id: 'Aixinjueluo_TieDan',
+  user_name: '爱新觉罗·铁蛋',
+  avatar_url: 'https://images.12306.com/avatar/img_1777.jpg',
+  app_id: 'mapplay'
+} 
+
+jg_token = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiRGFvZ2VsYXNpX0ppYW5HdW8iLCJ1c2VyX25hbWUiOiLpgZPmoLzmi4nmlq_Ct-W7uuWbvSIsImF2YXRhcl91cmwiOiJodHRwczovL2ltYWdlcy4xMjMwNi5jb20vYXZhdGFyL2ltZ18zNjE3LmpwZyIsImFwcF9pZCI6Im1hcHBsYXkifQ.iomZBi4svVOwjhGpm2sl7se2ULKzCPF5KKfqkVdpKlk'
+sf_token = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiTmlndWxhc2hfU2h1RmVuIiwidXNlcl9uYW1lIjoi5bC85Y-k5ouJ5pavwrfmt5HoiqwiLCJhdmF0YXJfdXJsIjoiaHR0cHM6Ly9pbWFnZXMuMTIzMDYuY29tL2F2YXRhci9pbWdfOTk4My5qcGciLCJhcHBfaWQiOiJtYXBwbGF5In0.lM8Jh9ntpgbWWCaTJKsuaMYQC7spfUbJ_FWtFg5Euvs'
+td_token = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiQWl4aW5qdWVsdW9fVGllRGFuIiwidXNlcl9uYW1lIjoi54ix5paw6KeJ572Xwrfpk4Hom4siLCJhdmF0YXJfdXJsIjoiaHR0cHM6Ly9pbWFnZXMuMTIzMDYuY29tL2F2YXRhci9pbWdfMTc3Ny5qcGciLCJhcHBfaWQiOiJtYXBwbGF5In0.hJNrzLuaLNq6gw72ahjQIaO1soE4xrbYHWKkTPRT90M'
+
 EM.run do
-  ws = WebSocket::EventMachine::Client.connect(:uri => 'ws://127.0.0.1:3000/cable',headers: {msmi_token:  "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoidXNlcl9pZCIsInVzZXJfbmFtZSI6InVzZXJfbmFtZSIsImF2YXRhcl91cmwiOiJhdmF0YXJfdXJsIiwiYXBwX2lkIjoibWFwcGxheSJ9.6p_6c53u5bC7RZEBPpQJPLOLSHh4PFUJCdmbxttY6uo"})
+  ws = WebSocket::EventMachine::Client.connect(:uri => 'ws://39.107.250.142:3000/cable',headers: {msmi_token:  jg_token})
   
   ws.onopen do
     ws.send({ command: 'subscribe', identifier: {channel: 'OnlineChannel'}.to_json }.to_json)
@@ -14,16 +39,7 @@ EM.run do
   ws.onmessage do |msg, type|
     json = JSON.parse(msg)
     if json["type"].nil?
-      puts ">>>>>>>>>> Received message: #{json}" 
-      msg = {
-        command: 'message',
-        identifier: { channel: 'OnlineChannel' }.to_json,
-        data: {
-          action: 'user_message',
-          params: "收到消息: #{json}"
-        }.to_json
-      }.to_json
-      ws.send msg
+      puts "#{json['message']['sender_name']}->铁蛋: #{json['message']['content']}"
     end
   end
 
@@ -33,13 +49,24 @@ EM.run do
   
   EventMachine.next_tick do
     # ws.send "Hello Server!"
+    # puts '输入：'
+    # inp = gets.chomp
+    # puts inp
   end
-
 end
 
 =begin
-  
 //  "{\"identifier\":\"{\\\"channel\\\":\\\"OnlineChannel\\\"}\",\"command\":\"subscribe\"}"
+
+ #   msg = {
+    #     command: 'message',
+    #     identifier: { channel: 'OnlineChannel' }.to_json,
+    #     data: {
+    #       action: 'user_message',
+    #       params: "收到消息: #{json}"
+    #     }.to_json
+    #   }.to_json
+    #   ws.send msg
 
 // 发送数据示例
  case data["command"]
