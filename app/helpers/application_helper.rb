@@ -66,4 +66,14 @@ module ApplicationHelper
     JSON.parse(redis.hget("#{app_id}:groups", group_id))
   end
 
+  # 群列表的key
+  def g_list
+    "#{current_user['app_id']}:groups"
+  end
+  
+  # 群的key
+  def g_key g_id 
+    "#{g_list}:#{g_id}"
+  end
+
 end

@@ -3,7 +3,7 @@ class API < Grape::API
 	format :json
 	helpers	ApplicationHelper
 
-
+# ========================= APP =========================
 	# 应用的唯一标识，不能重复，最小长度为两个字符
 	# 功能类似namespace
 	# 未注册不能创建usertoken
@@ -26,6 +26,8 @@ class API < Grape::API
 		msReturn(app_name: params[:app], secret_key: sk)
 	end
 
+
+# ========================= USER =========================
 
 	# 使用已注册的应用名
 	# 自行维护user_id，重复的id将被覆盖
@@ -51,72 +53,38 @@ class API < Grape::API
 		msReturn token
 	end
 
-	desc '创建群'
-	params do
-		requires :group_name, type: String
-		requires :group_icon, type: String
-		requires :members, type: Array
-	end
-	post :create_group do
-		authenticate_user!
-		gid = UUIDTools::UUID.timestamp_create.to_s.gsub('-','')
-		group_info = {
-			group_name: params[:group_name],
-			group_icon: params[:group_icon]
-		}.to_json
-		# 群信息
-		redis.hset "#{current_user['app_id']}:groups", gid, group_info
-		# 群成员
-		redis.zadd(gid, 0, current_user['user_id'])
-		params[:members].each do |m|
-			redis.zadd(gid, Time.now.to_i, m) if redis.hexists("#{current_user['app_id']}:users", m)
-		end
-		msReturn group_id
+	desc '增加好友'
+	params{ requires :user_id, type: String }
+	post :friends do
 	end
 
-	desc '添加成员'
+	desc '删除好友'
 	params do
-		requires :group_id, type: String
-		requires :members, type: Array
+		requires :user_id, type: String
 	end
-	post :add_members do
-		authenticate_user!
-		# app:groups 中查询群是否存在
-		msErr!('群不存在', 1003) unless redis.hexists("#{current_user['app_id']}:groups", params[:group_id])
-		# 群成员列表中查询是否有权限，0：创建者，1~10：管理员，时间戳：普通成员，方法：获取score为1~0的成员，判断当前用户存在
-		msErr!('不是群主或管理员', 1004) unless redis.zrangebyscore(params[:group_id], 0, 10).include?(current_user['user_id'])
-		res = params[:members].map do |m|
-			redis.zadd(params[:group_id], Time.now.to_i, m) if redis.hexists("#{current_user['app_id']}:users", m)
-		end
-		msReturn(add: eval(res.join('+')))# => 好牛逼的样子，其实就是整型数组求和，返回成功加入群的人数
+	delete :friends do
 	end
 
-	desc '移除成员'
-	params do
-		requires :group_id, type: String
-		requires :members, type: Array
-	end
-	post :remove_members do
-		authenticate_user!
-		msErr!('群不存在', 1003) unless redis.hexists("#{current_user['app_id']}:groups", params[:group_id])
-		msErr!('不是群主或管理员', 1004) unless redis.zrangebyscore(params[:group_id], 0, 10).include?(current_user['user_id'])
-		res = params[:members].map do |m|
-			redis.zrem(params[:group_id], m) 
-		end
-		msReturn
+	desc '获取好友列表'
+	get :friends do
 	end
 
-	desc '解散群'
+	desc '增加屏蔽用户'
 	params do
-		requires :group_id,	type: String,	desc: '目标群id'
+		requires :user_id, type: String
 	end
-	delete :delete_group do
-		authenticate_user!
-		msErr!('群不存在', 1003) unless redis.hexists("#{current_user['app_id']}:groups", params[:group_id])
-		msErr!('不是群主', 1004) unless redis.zrangebyscore(params[:group_id], 0, 0).include?(current_user['user_id'])
-		redis.hdel("#{current_user['app_id']}:groups", params[:group_id])
-		redis.del(params[:group_id])
-		msReturn
+	post :shield do
+	end
+
+	desc '删除屏蔽用户'
+	params do
+		requires :user_id, type: String
+	end
+	delete :shield do
+	end
+
+	desc '获取屏蔽列表'
+	get :shield do
 	end
 
 	desc '是否在线'
@@ -130,24 +98,125 @@ class API < Grape::API
 		# ActionCable.server.connections.first.connection_identifier
 		# => ActionCable.server.connections.first.current_user
 	end
+
+# ========================= GROUP =========================
+	desc '创建群'
+	params do
+		requires :group_name, type: String
+		requires :group_icon, type: String
+		requires :members, type: Array
+	end
+	post :create_group do
+		authenticate_user!
+		# 群信息
+		gid = UUIDTools::UUID.timestamp_create.to_s.gsub('-','')
+		g_key = g_key(gid)
+		redis.hset g_list, g_key, { group_id: gid, group_name: params[:group_name], group_icon: params[:group_icon] }.to_json
+		# 群主
+		redis.zadd(g_key, 0, current_user['user_id'])
+		# 成员
+		params[:members].each do |m|
+			redis.zadd(g_key, Time.now.to_i, m) if redis.hexists("#{current_user['app_id']}:users", m)
+		end
+		msReturn gid
+	end
+
+	desc '获取成员列表, 0: 群主，小于10是管理员，时间戳表示的是成员和加入时间'
+	params do
+		requires :group_id, type: String
+	end
+	get :members do
+		authenticate_user!
+		g_key = g_key(params[:group_id])
+		msErr!('群不存在', 1003) unless redis.hexists(g_list, g_key)
+		msErr!('不是群成员', 1003) if redis.zrank(g_key, current_user['user_id']).nil?
+		msReturn(mebers: redis.zrange(g_key, 0, -1,  withscores: true))
+	end
+
+	desc '我加入的群'
+	get :groups do
+		authenticate_user!
+		msReturn(groups: redis.hmget(g_list, g_key('*')).map{|g_k| redis.zrank(g_k, current_user['user_id']).nil? || g_k }.compact) 
+	end
+
+	desc '添加成员'
+	params do
+		requires :group_id, type: String
+		requires :members, type: Array
+	end
+	post :members do
+		authenticate_user!
+		g_key = g_key(params[:group_id])
+		msErr!('群不存在', 1003) unless redis.hexists(g_list, g_key)
+		# 群成员列表中查询是否有权限，0：创建者，1~10：管理员，时间戳：普通成员，方法：获取score为1~0的成员，判断当前用户存在
+		msErr!('不是群主或管理员', 1004) unless redis.zrangebyscore(g_key, 0, 10).include?(current_user['user_id'])
+		params[:members].each do |m|
+			redis.zadd(g_key, Time.now.to_i, m) if redis.hexists("#{current_user['app_id']}:users", m) 
+		end
+		# msReturn(add: eval(res.join('+')))# => 好牛逼的样子，其实就是整型数组求和，返回成功加入群的人数
+		msReturn(mebers: redis.zrange(g_key, 0, -1, withscores: true))
+	end
+
+	desc '加入群'
+	params do
+		requires :group_id,	type: String,	desc: '目标群id'
+	end
+	post :join do
+		authenticate_user!
+		g_key = g_key(params[:group_id])
+		msErr!('群不存在', 1003) unless redis.hexists(g_list, g_key)
+		msReturn(res: redis.zadd(g_key, Time.now.to_i, current_user['user_id']))
+	end
+
+	desc '移除成员'
+	params do
+		requires :group_id, type: String
+		requires :members, type: Array
+	end
+	delete :members do
+		authenticate_user!
+		g_key = g_key(params[:group_id])
+		msErr!('群不存在', 1003) unless redis.hexists(g_list, g_key)
+		g_manager = redis.zrangebyscore(g_key, 0, 10)
+		msErr!('不是群主或管理员', 1004) unless g_manager.include?(current_user['user_id'])
+		msErr!('不可以移除自已', 1005) if params[:members].include?(current_user['user_id'])
+		# 这里包含以下内容：
+		# 1、(g_manager&params[:members]).present? ，群管数组和参数数组求交集，如果有内容，说明参数组包含管理员
+		# 2、g_manager.index(current_user['user_id'])，在群管数组中找到自己的下标，如果不是群主（下标为0）时，没有权限移除其他管理员
+		msErr!('管理员不可以移除其它管理员', 1006) if (g_manager&params[:members]).present? && (g_manager.index(current_user['user_id']) != 0)
+		res = params[:members].map do |m|
+			redis.zrem(g_key, m) 
+		end
+		msReturn(mebers: redis.zrange(g_key, 0, -1, withscores: true))
+	end
+
+	desc '退群' 
+	params do
+		requires :group_id,	type: String,	desc: '目标群id'
+	end
+	delete :quit do
+		authenticate_user!
+		g_key = g_key(params[:group_id])
+		msErr!('群不存在', 1003) unless redis.hexists(g_list, g_key)
+		msErr!('群主不可以退群', 1004) if redis.zrangebyscore(params[:group_id], 0, 0).include?(current_user['user_id'])
+		msReturn(res: redis.zrem(g_key, current_user['user_id']))
+	end
+
+	desc '解散群'
+	params do
+		requires :group_id,	type: String,	desc: '目标群id'
+	end
+	delete :group do
+		authenticate_user!
+		g_key = g_key(params[:group_id])
+		msErr!('群不存在', 1003) unless redis.hexists(g_list, g_key)
+		msErr!('不是群主', 1004) unless redis.zrangebyscore(g_key, 0, 0).include?(current_user['user_id'])
+		redis.hdel(g_list, g_key)
+		redis.del(g_key)
+		msReturn 
+	end
+
+	
+
 	mount MessageAPI
 end
-
-=begin  结构
-
-app:
-创建app 
-	1、判断存在
-	redis.hexists 'apps', 'appname'
-	2、创建app, appinfo中包含应用的全局设置，如用户上限，有效期等，secret_key用于处理用户token时的身份验证，
-	redis.hset 'apps', {'appname': appinfo.json} # => appinfo.json: secret_key, ownner_name, create_date ... 
-	
-user:
-创建token
-	1、验证app标识和密钥
-	2、创建或修改用户
-	3、创建token
-
-发送xioxi
-
-=end

@@ -5,8 +5,9 @@ require File.expand_path('../config/environment', __dir__)
 # Prevent database truncation if the environment is production
 abort("The Rails environment is running in production mode!") if Rails.env.production?
 require 'rspec/rails'
-# require 'websocket'
-# require 'websocket-eventmachine-client'
+
+include ApplicationHelper
+
 # Add additional requires below this line. Rails is not loaded until this point!
 
 # Requires supporting ruby files with custom matchers and macros, etc, in
@@ -63,4 +64,24 @@ RSpec.configure do |config|
   config.filter_rails_from_backtrace!
   # arbitrary gems may also be filtered via:
   # config.filter_gems_from_backtrace("gem name")
+end
+
+def ___show msg='',obj 
+  # return
+  p '............................. spec'
+  puts msg
+  pp obj if obj
+  p '-----------------------------'
+end
+
+def _body
+  JSON.parse(response.body)
+end
+
+def _code
+  _body['ms_code'] || _message
+end
+
+def _content
+  _body['ms_content']
 end
