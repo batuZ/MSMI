@@ -16,7 +16,7 @@ RSpec.describe 'API', type: :request do
 											email: ''}.to_json
 										}
 	let(:token1){ 
-		u = { app_id: app_name, user_id: 'user_1', user_name: '用户1', avatar_url: 'http://image/1.jpg' }
+		u = { app_id: 'mapplay_test', user_id: 'user_1', user_name: '用户1', avatar_url: 'http://image/1.jpg' }
 		redis.hset "#{app_name}:users", u[:user_id], { user_name: u[:user_name], avatar_url: u[:avatar_url] }.to_json 
 		JWT.encode(u, 'test_hash_key')
 	}
@@ -54,7 +54,58 @@ RSpec.describe 'API', type: :request do
     # ___show _content
   end
 
+  it '添加好友' do 
+  	create_app;token1;token2;token3
+  	post '/friends', params: {user_id: 'user_3'}, headers:{'Msmi-Token' => token1}
+  	expect(_code).to be == 1000
+  	post '/friends', params: {user_id: 'user_2'}, headers:{'Msmi-Token' => token1}
+  	expect(_code).to be == 1000
+  	# ___show _content
+  end
 
+
+  it '删除好友' do
+  	create_app;token1;token2;token3
+  	post '/friends', params: {user_id: 'user_3'}, headers:{'Msmi-Token' => token1}
+  	post '/friends', params: {user_id: 'user_2'}, headers:{'Msmi-Token' => token1}
+  	delete '/friends', params: {user_id: 'user_3'}, headers:{'Msmi-Token' => token1}
+  	expect(_code).to be == 1000
+  	# ___show _content
+  end
+
+  it '获取好友列表' do
+  	create_app;token1;token2;token3
+  	post '/friends', params: {user_id: 'user_3'}, headers:{'Msmi-Token' => token1}
+  	post '/friends', params: {user_id: 'user_2'}, headers:{'Msmi-Token' => token1}
+  	get '/friends', headers:{'Msmi-Token' => token1}
+  	expect(_code).to be == 1000
+  	# ___show _content
+  end
+
+  it '增加屏蔽用户' do
+  	create_app;token1;token2;token3
+  	post '/shield', params: {user_id: 'user_3'}, headers:{'Msmi-Token' => token1}
+  	expect(_code).to be == 1000
+  	# ___show _content
+  end
+
+	it '删除屏蔽用户' do
+		create_app;token1;token2;token3
+		post '/shield', params: {user_id: 'user_3'}, headers:{'Msmi-Token' => token1}
+		post '/shield', params: {user_id: 'user_2'}, headers:{'Msmi-Token' => token1}
+		delete '/shield', params: {user_id: 'user_3'}, headers:{'Msmi-Token' => token1}
+		expect(_code).to be == 1000
+  	# ___show _content
+	end
+
+	it '获取屏蔽列表' do
+		create_app;token1;token2;token3
+		post '/shield', params: {user_id: 'user_3'}, headers:{'Msmi-Token' => token1}
+		post '/shield', params: {user_id: 'user_2'}, headers:{'Msmi-Token' => token1}
+		get '/shield', headers:{'Msmi-Token' => token1}
+		expect(_code).to be == 1000
+  	___show _content
+	end
 
 # ========================= GROUP =========================
 

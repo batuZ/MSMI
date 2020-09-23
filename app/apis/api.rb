@@ -53,9 +53,15 @@ class API < Grape::API
 		msReturn token
 	end
 
-	desc '增加好友'
+	desc '如果user不在好友列表则创建好友记录，如果已存在，则覆盖好友信息', summary: '添加好友, 或修改好友信息'
 	params{ requires :user_id, type: String }
 	post :friends do
+		authenticate_user!
+		msErr!('用户不存在或未注册', 1003) unless redis.hexists(u_list, params[:user_id])
+		msErr!('不能对自己进行操作', 1004) if params[:user_id].eql?(current_user['user_id'])
+		user = JSON.parse(redis.hget(u_list, params[:user_id]))
+		redis.zadd(f_list, eval(user['user_name'].codepoints.join'+'), params[:user_id]) #用name的ASC值排序
+		msReturn friends: redis.hmget(u_list, redis.zrange(f_list, 0, -1))
 	end
 
 	desc '删除好友'
@@ -63,10 +69,15 @@ class API < Grape::API
 		requires :user_id, type: String
 	end
 	delete :friends do
+		authenticate_user!
+		redis.zrem(f_list, params[:user_id])
+		msReturn friends: redis.hmget(u_list, redis.zrange(f_list, 0, -1))
 	end
 
 	desc '获取好友列表'
 	get :friends do
+		authenticate_user!
+		msReturn friends: redis.hmget(u_list, redis.zrange(f_list, 0, -1))
 	end
 
 	desc '增加屏蔽用户'
@@ -74,6 +85,12 @@ class API < Grape::API
 		requires :user_id, type: String
 	end
 	post :shield do
+		authenticate_user!
+		msErr!('用户不存在或未注册', 1003) unless redis.hexists(u_list, params[:user_id])
+		msErr!('不能对自己进行操作', 1004) if params[:user_id].eql?(current_user['user_id'])
+		user = JSON.parse(redis.hget(u_list, params[:user_id]))
+		redis.zadd(s_list, eval(user['user_name'].codepoints.join'+'), params[:user_id]) #用name的ASC值排序
+		msReturn shield: redis.hmget(u_list, redis.zrange(s_list, 0, -1))
 	end
 
 	desc '删除屏蔽用户'
@@ -81,10 +98,15 @@ class API < Grape::API
 		requires :user_id, type: String
 	end
 	delete :shield do
+		authenticate_user!
+		redis.zrem(s_list, params[:user_id])
+		msReturn shield: redis.hmget(u_list, redis.zrange(s_list, 0, -1))
 	end
 
 	desc '获取屏蔽列表'
 	get :shield do
+		authenticate_user!
+		msReturn shield: redis.hmget(u_list, redis.zrange(s_list, 0, -1))
 	end
 
 	desc '是否在线'

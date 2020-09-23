@@ -30,6 +30,7 @@ module ApplicationHelper
     end
   end
 
+  # connection 验证用户用的
   def authenticate_user token
     begin
       @current_user, _  = decode_token(token) # 找不到会抛异常
@@ -37,6 +38,7 @@ module ApplicationHelper
     end
   end
 
+  # 获取当前用户
   def current_user
   	@current_user
   end
@@ -58,7 +60,7 @@ module ApplicationHelper
 
   # 获取app信息
   def app_info app_name
-     JSON.parse(redis.hget('apps', app_name))
+    JSON.parse(redis.hget('apps', app_name))
   end
 
   # 获取群信息
@@ -70,10 +72,29 @@ module ApplicationHelper
   def g_list
     "#{current_user['app_id']}:groups"
   end
-  
+
   # 群的key
   def g_key g_id 
     "#{g_list}:#{g_id}"
   end
 
+  # 用户列表
+  def u_list
+    "#{current_user['app_id']}:users"
+  end
+
+  # 用户key
+  def u_key
+    "#{u_list}:#{current_user['user_id']}"
+  end
+
+  # 好友列表
+  def f_list
+    "#{u_key}:friends"
+  end
+
+  # 屏蔽表列
+  def s_list
+    "#{u_key}:shield"
+  end
 end
