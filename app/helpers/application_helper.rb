@@ -84,8 +84,8 @@ module ApplicationHelper
   end
 
   # 用户key
-  def u_key
-    "#{u_list}:#{current_user['user_id']}"
+  def u_key u_id=nil
+    "#{u_list}:#{u_id||current_user['user_id']}"
   end
 
   # 好友列表
@@ -96,5 +96,13 @@ module ApplicationHelper
   # 屏蔽表列
   def s_list
     "#{u_key}:shield"
+  end
+
+  def sender
+    {
+      identifier: current_user['user_id'],
+      name: current_user['user_name'],
+      avatar:  current_user['avatar_url']
+    }
   end
 end

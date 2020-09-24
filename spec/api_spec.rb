@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe 'API', type: :request do
 	before :each do
-		redis.flushdb
+		# redis.flushdb
 	end
 
 	let(:app_name) {'mapplay_test'}
@@ -104,14 +104,14 @@ RSpec.describe 'API', type: :request do
 		post '/shield', params: {user_id: 'user_2'}, headers:{'Msmi-Token' => token1}
 		get '/shield', headers:{'Msmi-Token' => token1}
 		expect(_code).to be == 1000
-  	___show _content
+  	# ___show _content
 	end
 
 # ========================= GROUP =========================
 
   it '创建群' do
   	create_app;token1;token2;token3
-  	post '/create_group', params: {
+  	post '/group', params: {
   		group_name: '组a',
   		group_icon: 'https://wwww.group/1.jpg',
   		members: ['user_2','user_3']
@@ -122,7 +122,7 @@ RSpec.describe 'API', type: :request do
 
   it '群成员列表' do
   	create_app;token1;token2;token3
-  	post '/create_group', params: {
+  	post '/group', params: {
   		group_name: '组a',
   		group_icon: 'https://wwww.group/1.jpg',
   		members: ['user_2','user_3']
@@ -136,7 +136,7 @@ RSpec.describe 'API', type: :request do
 
   it '我加入的群' do
   	create_app;token1;token2;token3
-  	post '/create_group', params: {
+  	post '/group', params: {
   		group_name: '组a',
   		group_icon: 'https://wwww.group/1.jpg',
   		members: ['user_2','user_3']
@@ -150,7 +150,7 @@ RSpec.describe 'API', type: :request do
 
   it '添加成员' do
   	create_app;token1;token2;token3
-  	post '/create_group', params: {
+  	post '/group', params: {
   		group_name: '组a',
   		group_icon: 'https://wwww.group/1.jpg',
   		members: ['user_2']}, headers: { 'Msmi-Token' => token1 }
@@ -163,7 +163,7 @@ RSpec.describe 'API', type: :request do
 
   it '加入群' do
   	create_app;token1;token2;token3
-  	post '/create_group', params: {
+  	post '/group', params: {
   		group_name: '组a',
   		group_icon: 'https://wwww.group/1.jpg',
   		members: ['user_2']}, headers: { 'Msmi-Token' => token1 }
@@ -175,7 +175,7 @@ RSpec.describe 'API', type: :request do
 
   it  '移除成员' do
   	create_app;token1;token2;token3
-  	post '/create_group', params: {
+  	post '/group', params: {
   		group_name: '组a',
   		group_icon: 'https://wwww.group/1.jpg',
   		members: ['user_2','user_3']
@@ -189,7 +189,7 @@ RSpec.describe 'API', type: :request do
 
   it '退群' do
   	create_app;token1;token2;token3
-  	post '/create_group', params: {
+  	post '/group', params: {
   		group_name: '组a',
   		group_icon: 'https://wwww.group/1.jpg',
   		members: ['user_2','user_3']
@@ -202,7 +202,7 @@ RSpec.describe 'API', type: :request do
 
   it '解散群' do
   	create_app;token1;token2;token3
-  	post '/create_group', params: {
+  	post '/group', params: {
   		group_name: '组a',
   		group_icon: 'https://wwww.group/1.jpg',
   		members: ['user_2','user_3']

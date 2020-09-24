@@ -128,7 +128,7 @@ class API < Grape::API
 		requires :group_icon, type: String
 		requires :members, type: Array
 	end
-	post :create_group do
+	post :group do
 		authenticate_user!
 		# 群信息
 		gid = UUIDTools::UUID.timestamp_create.to_s.gsub('-','')
@@ -237,8 +237,6 @@ class API < Grape::API
 		redis.del(g_key)
 		msReturn 
 	end
-
-	
 
 	mount MessageAPI
 end

@@ -2,14 +2,13 @@ class OnlineChannel < ApplicationCable::Channel
   
 	# 用户登录频道，
   def subscribed
-    user_key = "#{current_user['app_id']}:#{current_user['user_id']}"
-
-    stream_from user_key
+    stream_from u_key
 
     puts ">>>>>>> #{current_user['user_name']} 订阅后台通知成功"
 
     # 向客户端发送离线动态通知 
-    unsend = redis.keys("*_#{user_key}").sort
+    # unsend = redis.keys("*_#{u_key}").sort
+    unsend = redis.keys("#{u_key}:messages:*").sort
     if(unsend.count > 0)
       puts ">>> 有 #{unsend.count} 条离线通知待发送。。。"
       unsend.each do |key|
