@@ -38,9 +38,9 @@ class API < Grape::API
 	params do
 		requires :app_id,	type: String,	desc: '应用标识'
 		requires :secret_key,	type: String,	desc: '应用密钥'
-		requires :user_id,	type: String,	desc: '用户id,应用内唯一'
-		requires :user_name,	type: String,	desc: '用户名称'
-		requires :avatar_url,	type: String,	desc: '用户头像url'
+		requires :identifier,	type: String,	desc: '用户id,应用内唯一'
+		requires :name,	type: String,	desc: '用户名称'
+		requires :avatar,	type: String,	desc: '用户头像url'
 	end
 	post :token do
 		msErr!('app_id或secret_key不合法', 1003) unless app?(params[:app_id])
@@ -49,7 +49,7 @@ class API < Grape::API
 		params.delete(:secret_key)
 		token = create_token(params)
 		# 创建或修改用户记录
-		redis.hset "#{params.delete(:app_id)}:users", params.delete(:user_id), params.to_json
+		redis.hset "#{params.delete(:app_id)}:users", params[:identifier], params.to_json
 		msReturn token
 	end
 
@@ -58,10 +58,10 @@ class API < Grape::API
 	post :friends do
 		authenticate_user!
 		msErr!('用户不存在或未注册', 1003) unless redis.hexists(u_list, params[:user_id])
-		msErr!('不能对自己进行操作', 1004) if params[:user_id].eql?(current_user['user_id'])
+		msErr!('不能对自己进行操作', 1004) if params[:user_id].eql?(current_user['identifier'])
 		user = JSON.parse(redis.hget(u_list, params[:user_id]))
-		redis.zadd(f_list, eval(user['user_name'].codepoints.join'+'), params[:user_id]) #用name的ASC值排序
-		msReturn friends: redis.hmget(u_list, redis.zrange(f_list, 0, -1))
+		redis.zadd(f_list, eval(user['name'].codepoints.join'+'), params[:user_id]) #用name的ASC值排序
+		msReturn users: get_users_by(redis.zrange(f_list, 0, -1))
 	end
 
 	desc '删除好友'
@@ -71,13 +71,13 @@ class API < Grape::API
 	delete :friends do
 		authenticate_user!
 		redis.zrem(f_list, params[:user_id])
-		msReturn friends: redis.hmget(u_list, redis.zrange(f_list, 0, -1))
+		msReturn users: get_users_by(redis.zrange(f_list, 0, -1))
 	end
 
 	desc '获取好友列表'
 	get :friends do
 		authenticate_user!
-		msReturn friends: redis.hmget(u_list, redis.zrange(f_list, 0, -1))
+		msReturn users: get_users_by(redis.zrange(f_list, 0, -1))
 	end
 
 	desc '增加屏蔽用户'
@@ -87,10 +87,10 @@ class API < Grape::API
 	post :shield do
 		authenticate_user!
 		msErr!('用户不存在或未注册', 1003) unless redis.hexists(u_list, params[:user_id])
-		msErr!('不能对自己进行操作', 1004) if params[:user_id].eql?(current_user['user_id'])
+		msErr!('不能对自己进行操作', 1004) if params[:user_id].eql?(current_user['identifier'])
 		user = JSON.parse(redis.hget(u_list, params[:user_id]))
-		redis.zadd(s_list, eval(user['user_name'].codepoints.join'+'), params[:user_id]) #用name的ASC值排序
-		msReturn shield: redis.hmget(u_list, redis.zrange(s_list, 0, -1))
+		redis.zadd(s_list, eval(user['name'].codepoints.join'+'), params[:user_id]) #用name的ASC值排序
+		msReturn users: redis.hmget(u_list, redis.zrange(s_list, 0, -1))
 	end
 
 	desc '删除屏蔽用户'
@@ -100,13 +100,13 @@ class API < Grape::API
 	delete :shield do
 		authenticate_user!
 		redis.zrem(s_list, params[:user_id])
-		msReturn shield: redis.hmget(u_list, redis.zrange(s_list, 0, -1))
+		msReturn users: redis.hmget(u_list, redis.zrange(s_list, 0, -1))
 	end
 
 	desc '获取屏蔽列表'
 	get :shield do
 		authenticate_user!
-		msReturn shield: redis.hmget(u_list, redis.zrange(s_list, 0, -1))
+		msReturn users: redis.hmget(u_list, redis.zrange(s_list, 0, -1))
 	end
 
 	desc '是否在线'
@@ -135,7 +135,7 @@ class API < Grape::API
 		g_key = g_key(gid)
 		redis.hset g_list, g_key, { group_id: gid, group_name: params[:group_name], group_icon: params[:group_icon] }.to_json
 		# 群主
-		redis.zadd(g_key, 0, current_user['user_id'])
+		redis.zadd(g_key, 0, current_user['identifier'])
 		# 成员
 		params[:members].each do |m|
 			redis.zadd(g_key, Time.now.to_i, m) if redis.hexists("#{current_user['app_id']}:users", m)
@@ -151,14 +151,14 @@ class API < Grape::API
 		authenticate_user!
 		g_key = g_key(params[:group_id])
 		msErr!('群不存在', 1003) unless redis.hexists(g_list, g_key)
-		msErr!('不是群成员', 1003) if redis.zrank(g_key, current_user['user_id']).nil?
-		msReturn(mebers: redis.zrange(g_key, 0, -1,  withscores: true))
+		msErr!('不是群成员', 1003) if redis.zrank(g_key, current_user['identifier']).nil?
+		msReturn(users: redis.zrange(g_key, 0, -1,  withscores: true))
 	end
 
 	desc '我加入的群'
 	get :groups do
 		authenticate_user!
-		msReturn(groups: redis.hmget(g_list, g_key('*')).map{|g_k| redis.zrank(g_k, current_user['user_id']).nil? || g_k }.compact) 
+		msReturn(groups: redis.hmget(g_list, g_key('*')).map{|g_k| redis.zrank(g_k, current_user['identifier']).nil? || g_k }.compact) 
 	end
 
 	desc '添加成员'
@@ -171,12 +171,12 @@ class API < Grape::API
 		g_key = g_key(params[:group_id])
 		msErr!('群不存在', 1003) unless redis.hexists(g_list, g_key)
 		# 群成员列表中查询是否有权限，0：创建者，1~10：管理员，时间戳：普通成员，方法：获取score为1~0的成员，判断当前用户存在
-		msErr!('不是群主或管理员', 1004) unless redis.zrangebyscore(g_key, 0, 10).include?(current_user['user_id'])
+		msErr!('不是群主或管理员', 1004) unless redis.zrangebyscore(g_key, 0, 10).include?(current_user['identifier'])
 		params[:members].each do |m|
 			redis.zadd(g_key, Time.now.to_i, m) if redis.hexists("#{current_user['app_id']}:users", m) 
 		end
 		# msReturn(add: eval(res.join('+')))# => 好牛逼的样子，其实就是整型数组求和，返回成功加入群的人数
-		msReturn(mebers: redis.zrange(g_key, 0, -1, withscores: true))
+		msReturn(users: redis.zrange(g_key, 0, -1, withscores: true))
 	end
 
 	desc '加入群'
@@ -187,7 +187,7 @@ class API < Grape::API
 		authenticate_user!
 		g_key = g_key(params[:group_id])
 		msErr!('群不存在', 1003) unless redis.hexists(g_list, g_key)
-		msReturn(res: redis.zadd(g_key, Time.now.to_i, current_user['user_id']))
+		msReturn(res: redis.zadd(g_key, Time.now.to_i, current_user['identifier']))
 	end
 
 	desc '移除成员'
@@ -200,16 +200,16 @@ class API < Grape::API
 		g_key = g_key(params[:group_id])
 		msErr!('群不存在', 1003) unless redis.hexists(g_list, g_key)
 		g_manager = redis.zrangebyscore(g_key, 0, 10)
-		msErr!('不是群主或管理员', 1004) unless g_manager.include?(current_user['user_id'])
-		msErr!('不可以移除自已', 1005) if params[:members].include?(current_user['user_id'])
+		msErr!('不是群主或管理员', 1004) unless g_manager.include?(current_user['identifier'])
+		msErr!('不可以移除自已', 1005) if params[:members].include?(current_user['identifier'])
 		# 这里包含以下内容：
 		# 1、(g_manager&params[:members]).present? ，群管数组和参数数组求交集，如果有内容，说明参数组包含管理员
 		# 2、g_manager.index(current_user['user_id'])，在群管数组中找到自己的下标，如果不是群主（下标为0）时，没有权限移除其他管理员
-		msErr!('管理员不可以移除其它管理员', 1006) if (g_manager&params[:members]).present? && (g_manager.index(current_user['user_id']) != 0)
+		msErr!('管理员不可以移除其它管理员', 1006) if (g_manager&params[:members]).present? && (g_manager.index(current_user['identifier']) != 0)
 		res = params[:members].map do |m|
 			redis.zrem(g_key, m) 
 		end
-		msReturn(mebers: redis.zrange(g_key, 0, -1, withscores: true))
+		msReturn(users: redis.zrange(g_key, 0, -1, withscores: true))
 	end
 
 	desc '退群' 
@@ -220,8 +220,8 @@ class API < Grape::API
 		authenticate_user!
 		g_key = g_key(params[:group_id])
 		msErr!('群不存在', 1003) unless redis.hexists(g_list, g_key)
-		msErr!('群主不可以退群', 1004) if redis.zrangebyscore(params[:group_id], 0, 0).include?(current_user['user_id'])
-		msReturn(res: redis.zrem(g_key, current_user['user_id']))
+		msErr!('群主不可以退群', 1004) if redis.zrangebyscore(params[:group_id], 0, 0).include?(current_user['identifier'])
+		msReturn(res: redis.zrem(g_key, current_user['identifier']))
 	end
 
 	desc '解散群'
@@ -232,7 +232,7 @@ class API < Grape::API
 		authenticate_user!
 		g_key = g_key(params[:group_id])
 		msErr!('群不存在', 1003) unless redis.hexists(g_list, g_key)
-		msErr!('不是群主', 1004) unless redis.zrangebyscore(g_key, 0, 0).include?(current_user['user_id'])
+		msErr!('不是群主', 1004) unless redis.zrangebyscore(g_key, 0, 0).include?(current_user['identifier'])
 		redis.hdel(g_list, g_key)
 		redis.del(g_key)
 		msReturn 

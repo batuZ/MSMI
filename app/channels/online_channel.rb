@@ -4,7 +4,7 @@ class OnlineChannel < ApplicationCable::Channel
   def subscribed
     stream_from u_key
 
-    puts ">>>>>>> #{current_user['user_name']} 订阅后台通知成功"
+    puts ">>>>>>> #{current_user['name']} 订阅后台通知成功"
 
     # 向客户端发送离线动态通知 
     # unsend = redis.keys("*_#{u_key}").sort
@@ -21,7 +21,7 @@ class OnlineChannel < ApplicationCable::Channel
 
   def unsubscribed
     # 修改下线记录
-    puts ">>> #{current_user['user_name']} 离线"
+    puts ">>> #{current_user['name']} 离线"
   end
 
   # 接收用户消息

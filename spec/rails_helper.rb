@@ -74,6 +74,10 @@ def ___show msg='',obj
   p '-----------------------------'
 end
 
+def _message
+  "#{response.code}: #{response.message}. --> #{response.body}"
+end
+
 def _body
   JSON.parse(response.body)
 end

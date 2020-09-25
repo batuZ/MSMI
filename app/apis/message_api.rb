@@ -12,9 +12,9 @@ class MessageAPI < Grape::API
 			send_to = u_key(params[:user_id])
 			send_data = {
 				message_type: 'single',
-				session_identifier: current_user['user_id'],
-				session_icon: current_user['avatar_url'],
-				session_title: current_user['user_name'],
+				session_identifier: current_user['identifier'],
+				session_icon: current_user['avatar'],
+				session_title: current_user['name'],
 				sender: sender,
 				send_time: Time.now.to_i,
 				content_type: 'text',
@@ -38,7 +38,7 @@ class MessageAPI < Grape::API
 			authenticate_user!
 			g_key = g_key(params[:group_id])
 			msErr!('群不存在', 1003) unless redis.hexists(g_list, g_key)
-			msErr!('不是群成员', 1003) if redis.zrank(g_key, current_user['user_id']).nil?
+			msErr!('不是群成员', 1003) if redis.zrank(g_key, current_user['identifier']).nil?
 			group = group_info(current_user['app_id'], g_key)
 			send_data = {
 				message_type: 'group',

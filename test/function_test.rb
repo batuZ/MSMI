@@ -1,5 +1,8 @@
 
 
+
+
+
 # ============================= token 方法 =============================
 # require 'jwt'
 
@@ -12,17 +15,20 @@
 
 # ============================= hash to json deep =============================
 require 'json'
-pp root = {
-      identifier: {channel: 'OnlineChannel'},
-      command: 'subscribe'
-    }.to_s
-# pp json = root.to_json
-# pp json = json.to_json
-jhash = JSON.parse(root)
-pp jhash
-pp jhash["identifier"]["channel"]
+# pp root = {
+#       identifier: {channel: 'OnlineChannel'},
+#       command: 'subscribe'
+#     }.to_s
+# # pp json = root.to_json
+# # pp json = json.to_json
+# jhash = JSON.parse(root)
+# pp jhash
+# pp jhash["identifier"]["channel"]
 
-
+# pp JSON.parse "[{\"identifier\":\"Daogelasi_JianGuo\",\"name\":\"道格拉斯·建国\",\"avatar\":\"https://images.12306.com/avatar/img_3617.jpg\"},{\"identifier\":\"Daogelasi_JianGuo\",\"name\":\"道格拉斯·建国\",\"avatar\":\"https://images.12306.com/avatar/img_3617.jpg\"}]"
+pp [].is_a?Array
+pp ''.is_a?String
+pp [].blank?
 
 # ============================= Hashids =============================
 # require 'hashids'

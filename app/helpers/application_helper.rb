@@ -85,7 +85,7 @@ module ApplicationHelper
 
   # 用户key
   def u_key u_id=nil
-    "#{u_list}:#{u_id||current_user['user_id']}"
+    "#{u_list}:#{u_id||current_user['identifier']}"
   end
 
   # 好友列表
@@ -100,9 +100,19 @@ module ApplicationHelper
 
   def sender
     {
-      identifier: current_user['user_id'],
-      name: current_user['user_name'],
-      avatar:  current_user['avatar_url']
+      identifier: current_user['identifier'],
+      name: current_user['name'],
+      avatar:  current_user['avatar']
     }
   end
+
+  # 获取用户信息
+  def get_users_by identifiers
+    if identifiers.present?
+      redis.hmget(u_list, identifiers).compact.map{|a| JSON.parse a}
+    else
+      []
+    end
+  end
+
 end
