@@ -1,9 +1,6 @@
 module ApplicationHelper
 
-	def is_online *ids
-		online_ids = ActionCable.server.connections.map{|connect| connect.current_user.identifier}
-		ids & online_ids
-	end
+#======================= token =================================
 
 	def create_token params
     token = JWT.encode(params, 'test_hash_key')
@@ -14,11 +11,6 @@ module ApplicationHelper
 	def decode_token token
 		JWT.decode(token, 'test_hash_key')
 	end
-
-  # 判断app是否有效
-  def app? app_name
-    redis.hexists 'apps', app_name
-  end
 
 	# 验证token，获取用户
   def authenticate_user!
@@ -43,6 +35,13 @@ module ApplicationHelper
   	@current_user
   end
 
+  def is_online *ids
+    online_ids = ActionCable.server.connections.map{|connect| connect.current_user.identifier}
+    ids & online_ids
+  end
+
+#======================= response =================================
+
   # response
   def msReturn dic={}, msg=''
   	status 200
@@ -53,6 +52,8 @@ module ApplicationHelper
   	throw :error, message: {ms_message: msg, ms_code: code}, status: 200, headers: header
   end
 
+#======================= redis =================================
+
   # redis对象
   def redis
     @redis ||= Redis.new(driver: :hiredis, url: ActionCable.server.config.cable[:url])
@@ -62,6 +63,13 @@ module ApplicationHelper
   def app_info app_name
     JSON.parse(redis.hget('apps', app_name))
   end
+
+  # 判断app是否有效
+  def app? app_name
+    redis.hexists 'apps', app_name
+  end
+
+#======================= groups =================================
 
   # 获取群信息
   def group_info app_id, group_id
@@ -78,6 +86,25 @@ module ApplicationHelper
     "#{g_list}:#{g_id}"
   end
 
+  # 有我的群
+  def my_groups
+    redis.hscan(g_list,0).second.map{|g_info| redis.zrank(g_info.first, current_user['identifier']) ? JSON.parse(g_info.second) : nil }.compact
+  end
+
+  # 我创建的群
+  def mine_gropus
+    redis.hscan(g_list,0).second.map{|g_info| redis.zrank(g_info.first, current_user['identifier'])==0 ? JSON.parse(g_info.second) : nil }.compact
+  end
+
+  def get_members_by_group_id group_id
+    group_key = g_key(group_id)
+    redis.hmget(u_list, redis.zrange(group_key, 0, -1))
+    .zip(redis.zrange(group_key, 0, -1, withscores: true))
+    .map{ |e|  JSON.parse(e.first).merge!({member_type: e.second.second}) if e.first }
+    .compact
+  end
+#======================= user =================================
+
   # 用户列表
   def u_list
     "#{current_user['app_id']}:users"
@@ -86,21 +113,6 @@ module ApplicationHelper
   # 指定用户的key
   def u_key u_id=nil
     "#{u_list}:#{u_id||current_user['identifier']}"
-  end
-
-  # 好友列表
-  def f_list
-    "#{u_key}:friends"
-  end
-
-  # 指定用户的屏蔽表列键， nil=当前用户的 # => 'mapplay:users:Nigulash_ShuFen:shield'
-  def s_list_key u_id=nil
-    "#{u_key(u_id)}:shield"
-  end
-
-  # 指定用户的屏蔽表列， nil=当前用户的 # => ['Nigulash_ShuFen', 'Nigulash_ShuFen']
-  def s_list u_id=nil
-    redis.zrange(s_list_key(u_id), 0, -1)
   end
 
   # 发送者的信息
@@ -119,6 +131,23 @@ module ApplicationHelper
     else
       []
     end
+  end
+
+#======================= friends shield =================================
+
+  # 好友列表
+  def f_list
+    "#{u_key}:friends"
+  end
+
+  # 指定用户的屏蔽表列键， nil=当前用户的 # => 'mapplay:users:Nigulash_ShuFen:shield'
+  def s_list_key u_id=nil
+    "#{u_key(u_id)}:shield"
+  end
+
+  # 指定用户的屏蔽表列， nil=当前用户的 # => ['Nigulash_ShuFen', 'Nigulash_ShuFen']
+  def s_list u_id=nil
+    redis.zrange(s_list_key(u_id), 0, -1)
   end
 
 end
