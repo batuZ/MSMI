@@ -131,23 +131,35 @@ RSpec.describe 'API', type: :request do
   		members: ['user_2','user_3']
   	 	}, headers: { 'Msmi-Token' => token1 }
   	expect(_code).to be == 1000
-  	groupid = _content
+  	groupid = _content['new_group_id']
   	get '/members', params: {group_id: groupid}, headers: { 'Msmi-Token' => token1 }
   	expect(_code).to be == 1000
     # ___show _content
   end
 
-  it '我加入的群' do
+  it '我的群列表' do
   	create_app;token1;token2;token3
   	post '/group', params: {
   		group_name: '组a',
   		group_icon: 'https://wwww.group/1.jpg',
   		members: ['user_2','user_3']
   	 	}, headers: { 'Msmi-Token' => token1 }
+    expect(_code).to be == 1000
+    post '/group', params: {
+      group_name: '组b',
+      group_icon: 'https://wwww.group/1.jpg',
+      members: ['user_3']
+      }, headers: { 'Msmi-Token' => token1 }
+    expect(_code).to be == 1000
+    post '/group', params: {
+      group_name: '组b',
+      group_icon: 'https://wwww.group/1.jpg',
+      members: []
+      }, headers: { 'Msmi-Token' => token1 }
   	expect(_code).to be == 1000
-  	groupid = _content
-  	get '/groups', params:{group_id: groupid}, headers:{'Msmi-Token' => token1}
+  	get '/groups', headers:{'Msmi-Token' => token1}
   	expect(_code).to be == 1000
+    # ___show _content
   end
 
 
@@ -158,7 +170,7 @@ RSpec.describe 'API', type: :request do
   		group_icon: 'https://wwww.group/1.jpg',
   		members: ['user_2']}, headers: { 'Msmi-Token' => token1 }
 		expect(_code).to be == 1000
-		groupid = _content
+		groupid = _content['new_group_id']
 		post '/members', params: {group_id: groupid, members: ['user_2', 'user_3']}, headers: { 'Msmi-Token' => token1 }
 		expect(_code).to be == 1000
 		# ___show _content
@@ -171,7 +183,7 @@ RSpec.describe 'API', type: :request do
   		group_icon: 'https://wwww.group/1.jpg',
   		members: ['user_2']}, headers: { 'Msmi-Token' => token1 }
 		expect(_code).to be == 1000
-		groupid = _content
+		groupid = _content['new_group_id']
 		post '/join', params: {group_id: groupid}, headers:{'Msmi-Token' => token3}
 		expect(_code).to be == 1000
   end
@@ -184,7 +196,7 @@ RSpec.describe 'API', type: :request do
   		members: ['user_2','user_3']
   	 	}, headers: { 'Msmi-Token' => token1 }
   	expect(_code).to be == 1000
-  	groupid = _content
+  	groupid = _content['new_group_id']
   	delete '/members', params: {group_id: groupid, members: ['user_2']}, headers: { 'Msmi-Token' => token1 }
   	expect(_code).to be == 1000
     # ___show _content
@@ -198,7 +210,7 @@ RSpec.describe 'API', type: :request do
   		members: ['user_2','user_3']
   	 	}, headers: { 'Msmi-Token' => token1 }
   	expect(_code).to be == 1000
-  	groupid = _content
+  	groupid = _content['new_group_id']
   	delete '/quit', params: {group_id: groupid}, headers: {'Msmi-Token' => token3}
   	expect(_code).to be == 1000
   end
@@ -211,7 +223,7 @@ RSpec.describe 'API', type: :request do
   		members: ['user_2','user_3']
   	 	}, headers: { 'Msmi-Token' => token1 }
   	expect(_code).to be == 1000
-  	groupid = _content
+  	groupid = _content['new_group_id']
   	delete '/group', params: {group_id: groupid}, headers: {'Msmi-Token' => token1}
   	expect(_code).to be == 1000
   end

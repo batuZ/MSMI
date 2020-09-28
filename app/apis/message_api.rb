@@ -9,23 +9,29 @@ class MessageAPI < Grape::API
 		post :single do
 			authenticate_user!
 			msErr!('目标用户不存在或未注册', 1003) unless redis.hexists(u_list, params[:user_id])
-			send_to = u_key(params[:user_id])
-			send_data = {
-				message_type: 'single',
-				session_identifier: current_user['identifier'],
-				session_icon: current_user['avatar'],
-				session_title: current_user['name'],
-				sender: sender,
-				send_time: Time.now.to_i,
-				content_type: 'text',
-				content: params[:content],
-				preview: ''
-			}
-			if ActionCable.server.broadcast(send_to, send_data) == 0
-				hold = {send_to: send_to, send_data: send_data }
-				redis.setex("#{send_to}:messages:#{Time.now.to_i}", 1.hour.to_i, hold.to_json)
+			if s_list(params[:user_id]).include?(current_user['identifier'])
+				msReturn '你已被此用户屏蔽'
+			else
+				send_to = u_key(params[:user_id])
+				send_data = {
+					session_type: 'single_chat',
+					session_identifier: current_user['identifier'],
+					session_icon: current_user['avatar'],
+					session_title: current_user['name'],
+					sender: sender,
+					send_time: Time.now.to_i,
+					content_type: 'text',
+					content: params[:content],
+					preview: ''
+				}
+				if ActionCable.server.broadcast(send_to, send_data) == 0
+					hold = {send_to: send_to, send_data: send_data }
+					redis.setex("#{send_to}:messages:#{Time.now.to_i}", 1.hour.to_i, hold.to_json)
+					msReturn '用户不在线，消息已缓存'
+				else
+					msReturn '发送成功'
+				end
 			end
-			msReturn
 		end
 
 

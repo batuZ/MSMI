@@ -83,7 +83,7 @@ module ApplicationHelper
     "#{current_user['app_id']}:users"
   end
 
-  # 用户key
+  # 指定用户的key
   def u_key u_id=nil
     "#{u_list}:#{u_id||current_user['identifier']}"
   end
@@ -93,11 +93,17 @@ module ApplicationHelper
     "#{u_key}:friends"
   end
 
-  # 屏蔽表列
-  def s_list
-    "#{u_key}:shield"
+  # 指定用户的屏蔽表列键， nil=当前用户的 # => 'mapplay:users:Nigulash_ShuFen:shield'
+  def s_list_key u_id=nil
+    "#{u_key(u_id)}:shield"
   end
 
+  # 指定用户的屏蔽表列， nil=当前用户的 # => ['Nigulash_ShuFen', 'Nigulash_ShuFen']
+  def s_list u_id=nil
+    redis.zrange(s_list_key(u_id), 0, -1)
+  end
+
+  # 发送者的信息
   def sender
     {
       identifier: current_user['identifier'],

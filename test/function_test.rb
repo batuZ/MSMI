@@ -26,9 +26,9 @@ require 'json'
 # pp jhash["identifier"]["channel"]
 
 # pp JSON.parse "[{\"identifier\":\"Daogelasi_JianGuo\",\"name\":\"道格拉斯·建国\",\"avatar\":\"https://images.12306.com/avatar/img_3617.jpg\"},{\"identifier\":\"Daogelasi_JianGuo\",\"name\":\"道格拉斯·建国\",\"avatar\":\"https://images.12306.com/avatar/img_3617.jpg\"}]"
-pp [].is_a?Array
-pp ''.is_a?String
-pp [].blank?
+aa = nil
+
+pp aa || 123
 
 # ============================= Hashids =============================
 # require 'hashids'
