@@ -4,33 +4,33 @@ require 'websocket-eventmachine-client'
 require 'pp'
 require 'json'
 
-建国 = {
-  user_id: 'Daogelasi_JianGuo',
-  user_name: '道格拉斯·建国',
-  avatar_url: 'https://images.12306.com/avatar/img_3617.jpg',
-  app_id: 'mapplay'
-} 
+# user = {
+#   user_id: 'Daogelasi_JianGuo',
+#   user_name: '道格拉斯·建国',
+#   avatar_url: 'https://images.12306.com/avatar/img_3617.jpg',
+#   app_id: 'mapplay',
+#   token: 'eyJhbGciOiJIUzI1NiJ9.eyJpZGVudGlmaWVyIjoiRGFvZ2VsYXNpX0ppYW5HdW8iLCJuYW1lIjoi6YGT5qC85ouJ5pavwrflu7rlm70iLCJhdmF0YXIiOiJodHRwczovL2ltYWdlcy4xMjMwNi5jb20vYXZhdGFyL2ltZ18zNjE3LmpwZyIsImFwcF9pZCI6Im1hcHBsYXkifQ.3jgZIKdd6Xst-F7u0ZAN0Wx_i9MzDywYbSJU9dCSiaw'
+# } 
 
-淑芬 = {
+user = {
   user_id: 'Nigulash_ShuFen',
   user_name: '尼古拉斯·淑芬',
   avatar_url: 'https://images.12306.com/avatar/img_9983.jpg',
-  app_id: 'mapplay'
+  app_id: 'mapplay',
+  token: 'eyJhbGciOiJIUzI1NiJ9.eyJpZGVudGlmaWVyIjoiTmlndWxhc2hfU2h1RmVuIiwibmFtZSI6IuWwvOWPpOaLieaWr8K35reR6IqsIiwiYXZhdGFyIjoiaHR0cHM6Ly9pbWFnZXMuMTIzMDYuY29tL2F2YXRhci9pbWdfOTk4My5qcGciLCJhcHBfaWQiOiJtYXBwbGF5In0.Sb9jexLCx90vCf4lDKb2_ZF4hoT9je89la_btMmi8Sw'
 } 
 
-铁蛋 = {
-  user_id: 'Aixinjueluo_TieDan',
-  user_name: '爱新觉罗·铁蛋',
-  avatar_url: 'https://images.12306.com/avatar/img_1777.jpg',
-  app_id: 'mapplay'
-} 
-
-jg_token = 'eyJhbGciOiJIUzI1NiJ9.eyJpZGVudGlmaWVyIjoiRGFvZ2VsYXNpX0ppYW5HdW8iLCJuYW1lIjoi6YGT5qC85ouJ5pavwrflu7rlm70iLCJhdmF0YXIiOiJodHRwczovL2ltYWdlcy4xMjMwNi5jb20vYXZhdGFyL2ltZ18zNjE3LmpwZyIsImFwcF9pZCI6Im1hcHBsYXkifQ.3jgZIKdd6Xst-F7u0ZAN0Wx_i9MzDywYbSJU9dCSiaw'
-sf_token = 'eyJhbGciOiJIUzI1NiJ9.eyJpZGVudGlmaWVyIjoiTmlndWxhc2hfU2h1RmVuIiwibmFtZSI6IuWwvOWPpOaLieaWr8K35reR6IqsIiwiYXZhdGFyIjoiaHR0cHM6Ly9pbWFnZXMuMTIzMDYuY29tL2F2YXRhci9pbWdfOTk4My5qcGciLCJhcHBfaWQiOiJtYXBwbGF5In0.Sb9jexLCx90vCf4lDKb2_ZF4hoT9je89la_btMmi8Sw'
-td_token = 'eyJhbGciOiJIUzI1NiJ9.eyJpZGVudGlmaWVyIjoiQWl4aW5qdWVsdW9fVGllRGFuIiwibmFtZSI6IueIseaWsOiniee9l8K36ZOB6JuLIiwiYXZhdGFyIjoiaHR0cHM6Ly9pbWFnZXMuMTIzMDYuY29tL2F2YXRhci9pbWdfMTc3Ny5qcGciLCJhcHBfaWQiOiJtYXBwbGF5In0.MfIWrWnfJj-xEwBvQjKZTpCk_rcWU1kTNnCa1lfrS74'
+# user = {
+#   user_id: 'Aixinjueluo_TieDan',
+#   user_name: '爱新觉罗·铁蛋',
+#   avatar_url: 'https://images.12306.com/avatar/img_1777.jpg',
+#   app_id: 'mapplay',
+#   token: 'eyJhbGciOiJIUzI1NiJ9.eyJpZGVudGlmaWVyIjoiQWl4aW5qdWVsdW9fVGllRGFuIiwibmFtZSI6IueIseaWsOiniee9l8K36ZOB6JuLIiwiYXZhdGFyIjoiaHR0cHM6Ly9pbWFnZXMuMTIzMDYuY29tL2F2YXRhci9pbWdfMTc3Ny5qcGciLCJhcHBfaWQiOiJtYXBwbGF5In0.MfIWrWnfJj-xEwBvQjKZTpCk_rcWU1kTNnCa1lfrS74'
+# } 
 
 EM.run do
-  ws = WebSocket::EventMachine::Client.connect(:uri => 'ws://39.107.250.142:3000/cable',headers: {msmi_token:  jg_token})
+  ws = WebSocket::EventMachine::Client.connect(:uri => 'ws://39.107.250.142:3000/cable',headers: {msmi_token:  user[:token]})
+  # ws = WebSocket::EventMachine::Client.connect(:uri => 'ws://127.0.0.1:3000/cable',headers: {msmi_token:  sf_token})
   
   ws.onopen do
     ws.send({ command: 'subscribe', identifier: {channel: 'OnlineChannel'}.to_json }.to_json)
@@ -39,7 +39,7 @@ EM.run do
   ws.onmessage do |msg, type|
     json = JSON.parse(msg)
     if json["type"].nil?
-      puts "#{json['message']['sender_name']}->铁蛋: #{json['message']['content']}"
+      puts "#{json['message']['sender']['name']}: #{json['message']['content']}"
     end
   end
 
@@ -49,9 +49,9 @@ EM.run do
   
   EventMachine.next_tick do
     # ws.send "Hello Server!"
-    # puts '输入：'
+    # puts cu.first
     # inp = gets.chomp
-    # puts inp
+    puts user[:user_name]
   end
 end
 

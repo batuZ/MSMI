@@ -146,7 +146,7 @@ class API < Grape::API
 		redis.zadd(group_key, 0, current_user['identifier'])
 		# 成员
 		params[:members].each do |m|
-			redis.zadd(group_key, Time.now.to_i, m) if redis.hexists("#{current_user['app_id']}:users", m)
+			redis.zadd(group_key, Time.now.to_i, m) if redis.hexists(u_list, m)
 		end if params[:members]
 		msReturn(new_group_id: gid, groups: my_groups) 
 	end
@@ -191,9 +191,9 @@ class API < Grape::API
 		# 群成员列表中查询是否有权限，0：创建者，1~10：管理员，时间戳：普通成员，方法：获取score为1~0的成员，判断当前用户存在
 		msErr!('不是群主或管理员', 1004) unless redis.zrangebyscore(group_key, 0, 10).include?(current_user['identifier'])
 		params[:members].each do |m|
-			redis.zadd(group_key, Time.now.to_i, m) if redis.hexists("#{current_user['app_id']}:users", m) 
+			redis.zadd(group_key, Time.now.to_i, m) if redis.hexists(u_list, m) 
 		end
-		# msReturn(add: eval(res.join('+')))# => 好牛逼的样子，其实就是整型数组求和，返回成功加入群的人数
+		# msReturn(add: eval(res.join('+')))# => 好牛逼的样子，其实就是整型数组求和
 		msReturn(members: get_members_by_group_id(params[:group_id]))
 	end
 

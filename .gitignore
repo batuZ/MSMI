@@ -36,4 +36,5 @@
 nohup.out
 dump.rdb
 sftp-config.json
-/Gemfile.lock
+
+Gemfile.lock

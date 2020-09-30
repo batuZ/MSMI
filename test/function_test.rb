@@ -2,7 +2,9 @@
 
 
 
-
+ # --------  redis ---------------------------------------------------------
+ # https://www.rubydoc.info/github/redis/redis-rb/master/Redis/Distributed#lpush-instance_method
+ # 中文详解： https://www.cnblogs.com/funyoung/p/10730525.html
 # ============================= token 方法 =============================
 # require 'jwt'
 
@@ -12,7 +14,9 @@
 # content , func = JWT.decode(code, key)
 # pp content
 
-
+a = [1,2,3]
+b = [1,2,5,7]
+pp b - a
 # ============================= hash to json deep =============================
 require 'json'
 # pp root = {
@@ -26,9 +30,6 @@ require 'json'
 # pp jhash["identifier"]["channel"]
 
 # pp JSON.parse "[{\"identifier\":\"Daogelasi_JianGuo\",\"name\":\"道格拉斯·建国\",\"avatar\":\"https://images.12306.com/avatar/img_3617.jpg\"},{\"identifier\":\"Daogelasi_JianGuo\",\"name\":\"道格拉斯·建国\",\"avatar\":\"https://images.12306.com/avatar/img_3617.jpg\"}]"
-aa = nil
-
-pp aa || 123
 
 # ============================= Hashids =============================
 # require 'hashids'

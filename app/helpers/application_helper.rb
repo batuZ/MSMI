@@ -98,10 +98,11 @@ module ApplicationHelper
 
   def get_members_by_group_id group_id
     group_key = g_key(group_id)
+    redis.zrem(group_key, (redis.zrange(group_key, 0, -1) - redis.hkeys(u_list))|[nil]) # => 移除群中无效的成员
     redis.hmget(u_list, redis.zrange(group_key, 0, -1))
-    .zip(redis.zrange(group_key, 0, -1, withscores: true))
-    .map{ |e|  JSON.parse(e.first).merge!({member_type: e.second.second}) if e.first }
-    .compact
+      .zip(redis.zrange(group_key, 0, -1, withscores: true))
+      .map{ |e|  JSON.parse(e.first).merge!({member_type: e.second.second}) if e.first }
+      .compact
   end
 #======================= user =================================
 
