@@ -42,6 +42,28 @@ RSpec.describe 'API', type: :request do
     # ___show _content
   end
 
+# ========================= MESSAGE =========================
+  it '单聊' do
+    create_app;token1;token2;token3
+    post '/message/single', params:{user_id: 'user_3', content: 'asdf'}, headers:{'Msmi-Token' => token1}
+    expect(_code).to be == 1000
+    # ___show _content
+  end
+
+  it '群聊' do
+    create_app;token1;token2;token3
+    post '/group', params: {
+      group_name: '组a',
+      group_icon: 'https://wwww.group/1.jpg',
+      members: ['user_2','user_3']
+      }, headers: { 'Msmi-Token' => token1 }
+    expect(_code).to be == 1000
+    groupid = _content['new_group_id']
+
+    post '/message/group', params:{user_id: groupid, content: 'asdf'}, headers:{'Msmi-Token' => token1}
+     expect(_code).to be == 1000
+    # ___show _content
+  end
 # ========================= USER =========================
 
   it '创建用户' do
@@ -66,6 +88,17 @@ RSpec.describe 'API', type: :request do
   	# ___show _content
   end
 
+  it '设置approve， 加好友， 审批好友审请' do
+    create_app;token1;token2;token3
+    post '/setting',  params: {approve: 1}, headers:{'Msmi-Token' => token1}
+    expect(_code).to be == 1000 # 设置approve
+    post '/friends', params: {user_id: 'user_1'}, headers:{'Msmi-Token' => token3}
+    expect(_code).to be == 1000 # 加好友
+    byebug
+    post '/judgment',  params: {user_id: 'user_3', judgment: true}, headers:{'Msmi-Token' => token1}
+    expect(_code).to be == 1000 # 审批好友审请
+    # ___show _content
+  end
 
   it '删除好友' do
   	create_app;token1;token2;token3
@@ -162,6 +195,22 @@ RSpec.describe 'API', type: :request do
     # ___show _content
   end
 
+  it '群设置, 加群， 审批' do
+    create_app;token1;token2;token3
+    post '/group', params: {
+      group_name: '组a',
+      group_icon: 'https://wwww.group/1.jpg',
+      members: ['user_2']}, headers: { 'Msmi-Token' => token1 }
+    expect(_code).to be == 1000
+    groupid = _content['new_group_id']
+    post '/group_setting', params: {group_id: groupid, approve: 1}, headers: { 'Msmi-Token' => token1 }
+    expect(_code).to be == 1000
+    post '/join', params: {group_id: groupid, remark: '123'}, headers:{'Msmi-Token' => token3}
+    expect(_code).to be == 1000
+    post '/group_judgment', params: {group_id: groupid, user_id: 'user_3', judgment: false}, headers:{'Msmi-Token' => token1}
+    expect(_code).to be == 1000
+    # ___show _content
+  end
 
   it '添加成员' do
   	create_app;token1;token2;token3

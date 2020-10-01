@@ -43,7 +43,7 @@ module ApplicationHelper
 #======================= response =================================
 
   # response
-  def msReturn dic={}, msg=''
+  def msReturn dic={}, msg='OK'
   	status 200
   	{ ms_content: dic, ms_code: 1000, ms_message: msg }
   end
@@ -56,7 +56,7 @@ module ApplicationHelper
 
   # redis对象
   def redis
-    @redis ||= Redis.new(driver: :hiredis, url: ActionCable.server.config.cable[:url])
+    $REDIS ||= Redis.new(driver: :hiredis, url: ActionCable.server.config.cable[:url])
   end
 
   # 获取app信息
@@ -69,6 +69,20 @@ module ApplicationHelper
     redis.hexists 'apps', app_name
   end
 
+  # 推送数据，或离线缓存
+  def push_data tagets_arr, send_data 
+    res = 0
+    tagets_arr.each do |tag|
+      send_to = u_key(tag)
+      is_pushed = ActionCable.server.broadcast(send_to, send_data)
+      if is_pushed == 0
+        hold = {send_to: send_to, send_data: send_data }
+        redis.setex("#{send_to}:messages:#{Time.now.to_i}", 1.hour.to_i, hold.to_json)
+      end
+      res += is_pushed
+    end
+    res
+  end
 #======================= groups =================================
 
   # 获取群信息
@@ -86,6 +100,11 @@ module ApplicationHelper
     "#{g_list}:#{g_id}"
   end
 
+  # 群设置的key
+  def g_setting_key g_id
+    "#{g_key(g_id)}:setting"
+  end
+
   # 有我的群
   def my_groups
     redis.hscan(g_list,0).second.map{|g_info| redis.zrank(g_info.first, current_user['identifier']) ? JSON.parse(g_info.second) : nil }.compact
@@ -96,6 +115,7 @@ module ApplicationHelper
     redis.hscan(g_list,0).second.map{|g_info| redis.zrank(g_info.first, current_user['identifier'])==0 ? JSON.parse(g_info.second) : nil }.compact
   end
 
+  # 获取群中成员详细信息
   def get_members_by_group_id group_id
     group_key = g_key(group_id)
     redis.zrem(group_key, (redis.zrange(group_key, 0, -1) - redis.hkeys(u_list))|[nil]) # => 移除群中无效的成员
@@ -104,6 +124,7 @@ module ApplicationHelper
       .map{ |e|  JSON.parse(e.first).merge!({member_type: e.second.second}) if e.first }
       .compact
   end
+  
 #======================= user =================================
 
   # 用户列表
@@ -114,6 +135,11 @@ module ApplicationHelper
   # 指定用户的key
   def u_key u_id=nil
     "#{u_list}:#{u_id||current_user['identifier']}"
+  end
+
+  # 用户设置的key
+  def u_setting_key u_id=nil
+    "#{u_key(u_id)}:setting"
   end
 
   # 发送者的信息
@@ -136,9 +162,19 @@ module ApplicationHelper
 
 #======================= friends shield =================================
 
+  # 好友列表键
+  def f_list_key u_id=nil
+    "#{u_key(u_id)}:friends"
+  end
+
   # 好友列表
   def f_list
-    "#{u_key}:friends"
+    redis.zrangebyscore(f_list_key, 0, "+inf")
+  end
+
+  # 指定用户的好友审请列表
+  def un_f_list u_id
+    redis.zrangebyscore(f_list_key(u_id), "-inf", -2)
   end
 
   # 指定用户的屏蔽表列键， nil=当前用户的 # => 'mapplay:users:Nigulash_ShuFen:shield'

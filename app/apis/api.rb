@@ -53,15 +53,67 @@ class API < Grape::API
 		msReturn token
 	end
 
-	desc '如果user不在好友列表则创建好友记录，如果已存在，则覆盖好友信息', summary: '添加好友, 或修改好友信息'
-	params{ requires :user_id, type: String }
+	desc '用户设置：加好友条件,和其它setting'	
+	params do
+		optional :approve, type: Integer, desc: '加好友条件：0-不需要审批，直接添加（默认），1-需要审批'
+	end
+	post :user_setting do
+		authenticate_user!
+		redis.hset(u_setting_key, params)
+		msReturn
+	end
+
+# ========================= FRIENDS =========================
+
+	desc '添加好友', summary: '添加好友'
+	params do
+		requires :user_id, type: String
+		optional :remark, type:String, desc: '备注'
+	end
 	post :friends do
 		authenticate_user!
 		msErr!('用户不存在或未注册', 1003) unless redis.hexists(u_list, params[:user_id])
 		msErr!('不能对自己进行操作', 1004) if params[:user_id].eql?(current_user['identifier'])
+		msErr!('对方已经是你的好友', 1005) if f_list.include?(params[:user_id])
 		user = JSON.parse(redis.hget(u_list, params[:user_id]))
-		redis.zadd(f_list, eval(user['name'].codepoints.join'+'), params[:user_id]) #用name的ASC值排序
-		msReturn users: get_users_by(redis.zrange(f_list, 0, -1))
+		mark = redis.hget(u_setting_key(params[:user_id]), 'approve').to_i
+		if(mark == 0 || f_list.include?(current_user['identifier'])) # => 对方设置为不限制或对方的好友列表中有自己，直接添加
+			redis.zadd(f_list_key, eval(user['name'].codepoints.join'+'), params[:user_id]) #用name的ASC值排序
+			msReturn users: get_users_by(f_list)
+		elsif (mark == 1)
+			send_data = {
+					session_type: 'system_message',
+					session_identifier: 'judgment',
+					session_icon: 'http://sys/image/frinds.jpg',
+					session_title: '好友提醒',
+					sender: sender,
+					send_time: Time.now.to_i,
+					content_type: 'friends_judgment',
+					content: params[:remark] || "#{user['name']}申请加你为好友。",
+					preview: ''
+				}
+			push_data([params[:user_id]], send_data)
+			redis.zadd(f_list_key, -1*Time.now.to_i, params[:user_id]) #用name的ASC值排序
+			msReturn('', '已发出审请，等待对方确认')
+		end
+	end
+
+	desc '审批好友审请', summary: '审批好友审请'
+	params do
+		requires :user_id, type: String
+		requires :judgment, type: Boolean, desc: '是否通过申请，通过 true, 拒绝 false	' 
+	end
+	post :judgment do
+		authenticate_user!
+		msErr!('用户不存在或未注册', 1003) unless redis.hexists(u_list, params[:user_id])
+		msErr!('不能对自己进行操作', 1004) if params[:user_id].eql?(current_user['identifier'])
+		msErr!('无效的审请记录', 1005) unless un_f_list(params[:user_id]).include?(current_user['identifier'])
+		if(params[:judgment])
+			redis.zadd(f_list_key(params[:user_id]), eval(current_user['name'].codepoints.join'+'), current_user['identifier'])
+		else
+			redis.zrem(f_list_key(params[:user_id]), current_user['identifier'])
+		end
+		msReturn
 	end
 
 	desc '删除好友'
@@ -70,15 +122,17 @@ class API < Grape::API
 	end
 	delete :friends do
 		authenticate_user!
-		redis.zrem(f_list, params[:user_id])
-		msReturn users: get_users_by(redis.zrange(f_list, 0, -1))
+		redis.zrem(f_list_key, params[:user_id])
+		msReturn users: get_users_by(redis.zrange(f_list_key, 0, -1))
 	end
 
 	desc '获取好友列表'
 	get :friends do
 		authenticate_user!
-		msReturn users: get_users_by(redis.zrange(f_list, 0, -1))
+		msReturn users: get_users_by(f_list)
 	end
+
+# ========================= SHIELD =========================
 
 	desc '增加屏蔽用户'
 	params do
@@ -165,6 +219,19 @@ class API < Grape::API
 		msReturn(groups: my_groups)  
 	end
 
+	desc '群设置：approve-加群条件'	
+	params do
+		requires :group_id,	type: String,	desc: '目标群id'
+		optional :approve, type: Integer, desc: '加群条件：0-不需要审批，直接添加（默认），1-需要审批'
+	end
+	post :group_setting do
+		authenticate_user!
+		group_key = g_key(params[:group_id])
+		msErr!('群不存在', 1003) unless redis.hexists(g_list, group_key)
+		msErr!('不是群主', 1004) unless redis.zrangebyscore(group_key, 0, 0).include?(current_user['identifier'])
+		redis.hset(g_setting_key(params.delete(:group_id)), params)
+		msReturn
+	end
 # ========================= MEMBERS =========================
 
 	desc '获取成员列表, 0: 群主，小于10是管理员，时间戳表示的是成员和加入时间'
@@ -197,6 +264,27 @@ class API < Grape::API
 		msReturn(members: get_members_by_group_id(params[:group_id]))
 	end
 
+
+	desc '审批进群审请', summary: '审批进群审请'
+	params do
+		requires :group_id, type: String
+		requires :user_id, type: String
+		requires :judgment, type: Boolean, desc: '是否通过申请，通过 true, 拒绝 false	' 
+	end
+	post :group_judgment do
+		authenticate_user!
+		group_key = g_key(params[:group_id])
+		msErr!('群不存在', 1003) unless redis.hexists(g_list, group_key)
+		msErr!('不是群主或管理员', 1004) unless redis.zrangebyscore(group_key, 0, 10).include?(current_user['identifier'])
+		msErr!('用户不存在或未注册', 1005) unless redis.hexists(u_list, params[:user_id])
+		msErr!('不能对自己进行操作', 1006) if params[:user_id].eql?(current_user['identifier'])
+		msErr!('用户已经在群中', 1007) unless redis.zrank(group_key, params[:user_id]).nil?
+		if(params[:judgment])
+			redis.zadd(group_key, Time.now.to_i, params[:user_id])
+		end
+		msReturn
+	end
+
 	desc '移除成员'
 	params do
 		requires :group_id, type: String
@@ -222,12 +310,32 @@ class API < Grape::API
 	desc '加入群'
 	params do
 		requires :group_id,	type: String,	desc: '目标群id'
+		optional :remark, type: String, desc: '备注'
 	end
 	post :join do
 		authenticate_user!
 		group_key = g_key(params[:group_id])
 		msErr!('群不存在', 1003) unless redis.hexists(g_list, group_key)
-		msReturn(res: redis.zadd(group_key, Time.now.to_i, current_user['identifier']))
+		msErr!('你已经在群中', 1004) unless redis.zrank(group_key, current_user['identifier']).nil?
+		mark = redis.hget(g_setting_key(params[:group_id]), 'approve').to_i
+		if(mark == 0)
+			redis.zadd(group_key, Time.now.to_i, current_user['identifier'])
+			msReturn(groups: my_groups)
+		elsif (mark == 1)
+			send_data = {
+					session_type: 'system_message',
+					session_identifier: 'judgment',
+					session_icon: 'http://sys/image/frinds.jpg',
+					session_title: '群提醒',
+					sender: sender,
+					send_time: Time.now.to_i,
+					content_type: 'group_judgment',
+					content: params[:remark] || "#{current_user['name']}申请加入群#{group[:name]}。",
+					preview: ''
+				}
+			push_data(redis.zrangebyscore(group_key, 0, 10), send_data)
+			msReturn('', '已发出审请，等待对方确认')
+		end
 	end
 
 	desc '退群' 

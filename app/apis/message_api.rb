@@ -23,10 +23,7 @@ class MessageAPI < Grape::API
 					content: params[:content],
 					preview: ''
 				}
-				send_to = u_key(params[:user_id])
-				if ActionCable.server.broadcast(send_to, send_data) == 0
-					hold = {send_to: send_to, send_data: send_data }
-					redis.setex("#{send_to}:messages:#{Time.now.to_i}", 1.hour.to_i, hold.to_json)
+				if push_data([params[:user_id]], send_data) == 0
 					msReturn('', '用户不在线，消息已缓存')
 				else
 					msReturn('','OK')
@@ -59,17 +56,10 @@ class MessageAPI < Grape::API
 			}
 			members = redis.zrange(group_key, 0, -1)
 			members.delete(current_user['identifier'])
-			members.each do |m|
-				unless s_list(m).include?(current_user['identifier'])
-					send_to = u_key(m)
-					send_res = ActionCable.server.broadcast(send_to, send_data) 
-					if send_res == 0
-						hold = {send_to: send_to, send_data: send_data }
-						redis.setex("#{send_to}:messages:#{Time.now.to_i}", 1.hour.to_i, hold.to_json)
-					end
-				end
-			end
+			push_data(members, send_data)
 			msReturn('','OK')
 		end
+
+		
 	end
 end

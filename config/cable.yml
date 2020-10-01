@@ -4,7 +4,9 @@ development:
   channel_prefix: MSMI_development
 
 test:
-  adapter: async
+  adapter: redis
+  url: <%= ENV.fetch("REDIS_URL") { "redis://localhost:6379/0" } %>
+  channel_prefix: MSMI_development
 
 production:
   adapter: redis
