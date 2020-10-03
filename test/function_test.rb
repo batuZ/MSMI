@@ -4,8 +4,12 @@
 require 'benchmark'
 require 'benchmark/ips'
 include Benchmark
-puts Infinity
 
+hs = {'a' => 123}
+pp hs[:a]
+pp hs['a']
+
+# pp aa.downcase.delete
 # n = 5000000
 # Benchmark.benchmark(CAPTION, 7, FORMAT, ">total:", ">avg:") do |x|
 #   tf = x.report("for:")   { for i in 1..n; a = "1"; end }

@@ -26,7 +26,24 @@ class API < Grape::API
 		msReturn(app_name: params[:app], secret_key: sk)
 	end
 
-
+	desc '使用云存储时，下载文件'
+	route :get, '/msmi_file/*/*' do
+		unless save_tag["service"].eql?("Disk")
+			tag_type = params["splat"].first # => 当用云时：original or preview | 当用本地存时： app_id
+			tag_name = params["splat"].second # => filename
+			tag_format = params["format"] # => jpg mp4 mp3
+			url = "https://#{save_tag["bucket"]}.#{save_tag["endpoint"]}/#{tag_name}.#{tag_format}"
+			# => 如果path中带preview,则通过oss提供的功能处理预览图
+			if tag_type.eql?('preview') && ['jpg', 'jpge', 'png'].include?(tag_format.downcase)
+				url += "?x-oss-process=image/auto-orient,1/resize,m_lfit,w_300/quality,q_60/format,jpg"
+			elsif tag_type.eql?('preview') && tag_format.eql?('mp4')
+				url += "?x-oss-process=video/snapshot,t_1000,f_jpg,w_300,h_0,m_fast"
+			else
+				# audio? file?
+			end
+			redirect url
+		end
+	end
 # ========================= USER =========================
 
 	# 使用已注册的应用名

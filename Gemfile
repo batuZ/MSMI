@@ -42,6 +42,9 @@ gem 'jwt', '~> 2.2.1'
 
 gem 'uuidtools'
 
+# 阿里云rubysdk, 手动管理OSS  https://help.aliyun.com/document_detail/32115.html?spm=a2c4g.11186623.6.1136.368f20bePH6jFP
+gem 'aliyun-sdk'
+
 # Use ActiveStorage variant
 # gem 'mini_magick', '~> 4.8'
 

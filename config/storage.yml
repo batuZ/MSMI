@@ -1,10 +1,35 @@
 test:
   service: Disk
-  root: <%= Rails.root.join("tmp/storage") %>
+  root: <%= Rails.root.join("public") %>
 
 local:
   service: Disk
-  root: <%= Rails.root.join("storage") %>
+  root: <%= Rails.root.join("public") %>
+
+aliyun: &aliyun
+  service: Aliyun
+  access_key_id: LTAI4G6stqjbx6UocJprAvcw
+  access_key_secret: 2NAqquRz742hrYsLjXNvCY595Yi1mU
+  endpoint: oss-cn-beijing.aliyuncs.com
+  
+aliyun_development:
+  <<: *aliyun
+  bucket: msmi-mapplaytest
+
+aliyun_production:
+  <<: *aliyun
+  bucket: msmi-mapplaytest
+
+# ================== 关于本地存储和云存储的使用 =======================
+# 本地存储：
+#   用于内部网络、私有服务器环境
+#   文件需要放在静态资源目录或服务器，供客户端访问
+#   需要手动处理文件预览图和生命周期
+
+# 云存储：
+#   用于公开服务网络和托管服务器
+#   使用OSS提供的功能获取预览图，设置文件生命周期
+#   客户端直传（未完成）
 
 # Use rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
 # amazon:
@@ -32,3 +57,4 @@ local:
 #   service: Mirror
 #   primary: local
 #   mirrors: [ amazon, google, microsoft ]
+

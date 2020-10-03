@@ -5,7 +5,7 @@ RSpec.describe 'API', type: :request do
 		redis.flushdb
 	end
 
-	let(:app_name) {'mapplay_test'}
+	let(:app_name) {'mapplay'}
 	let(:app_key){'abcdefg'}
 	let(:create_app){ redis.hset 'apps', app_name, {
 											create_time: Time.now.to_i,
@@ -45,7 +45,11 @@ RSpec.describe 'API', type: :request do
 # ========================= MESSAGE =========================
   it '单聊' do
     create_app;token1;token2;token3
-    post '/message/single', params:{user_id: 'user_3', content: 'asdf'}, headers:{'Msmi-Token' => token1}
+    post '/message/single', params:{
+      user_id: 'user_3', 
+      content: 'asdf',
+      file: fixture_file_upload('app/assets/images/avatar_1.jpg','image/jpeg')
+    }, headers:{'Msmi-Token' => token1}
     expect(_code).to be == 1000
     # ___show _content
   end

@@ -4,7 +4,10 @@ class MessageAPI < Grape::API
 		desc '单聊', summary: '单聊'
 		params do
 			requires :user_id,	type: String,	desc: '目标id'
-			requires :content,		type: String,	desc: '消息中的文字内容'
+			optional :content,		type: String,	desc: '消息中的文字内容'
+			optional :file, type: ActionDispatch::Http::UploadedFile, coerce_with: ->(c) { ActionDispatch::Http::UploadedFile.new(c) }, 
+									desc:'图片、视频或音频文件', documentation: { param_type: 'formData', type: 'File' }
+			at_least_one_of :content, :file,	desc: 'content参数和file至少有其一'
 		end
 		post :single do
 			authenticate_user!
@@ -12,6 +15,8 @@ class MessageAPI < Grape::API
 			if s_list(params[:user_id]).include?(current_user['identifier'])
 				msReturn('','你已被此用户屏蔽')
 			else
+				byebug
+				original, preview = save_file(params[:file].tempfile.path)
 				send_data = {
 					session_type: 'single_chat',
 					session_identifier: current_user['identifier'],
@@ -19,9 +24,10 @@ class MessageAPI < Grape::API
 					session_title: current_user['name'],
 					sender: sender,
 					send_time: Time.now.to_i,
-					content_type: 'text',
+					content_type: params[:file].try(:content_type) || 'text/plain',
 					content: params[:content],
-					preview: ''
+					content_file: original,
+					content_preview: preview
 				}
 				if push_data([params[:user_id]], send_data) == 0
 					msReturn('', '用户不在线，消息已缓存')
@@ -30,7 +36,6 @@ class MessageAPI < Grape::API
 				end
 			end
 		end
-
 
 		desc '发送消息到群，群聊'
 		params do
@@ -59,7 +64,5 @@ class MessageAPI < Grape::API
 			push_data(members, send_data)
 			msReturn('','OK')
 		end
-
-		
 	end
 end

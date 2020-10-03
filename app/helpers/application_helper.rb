@@ -187,4 +187,57 @@ module ApplicationHelper
     redis.zrange(s_list_key(u_id), 0, -1)
   end
 
+#======================= file =================================
+  
+  def save_file tempfile_path
+    if File.exist?(tempfile_path) && File.file?(tempfile_path)
+      file_name = File.basename(tempfile_path)
+      if save_tag["service"].eql?("Disk")
+        file_path = File.join(save_tag["root"], current_user['app_id'], file_name)
+        FileUtils.mkdir_p(File.dirname(file_path), :mode => 0700)
+        FileUtils.move(tempfile_path, file_path)
+        ["msmi_file/original/#{file_name}", "msmi_file/preview/#{file_name}"]
+      else
+        al_bucket.put_object(File.basename(tempfile_path), :file => tempfile_path)
+        ["#{current_user['app_id']}/#{file_name}", "#{current_user['app_id']}/#{file_name}"]
+      end
+    end
+  end
+
+  def al_bucket
+    @al_client ||= Aliyun::OSS::Client.new(
+      endpoint: save_tag['endpoint'],
+      access_key_id: save_tag['access_key_id'],
+      access_key_secret: save_tag['access_key_secret'])
+    @al_client.get_bucket(save_tag['bucket'])
+  end
+
+  def save_tag
+    # => Disk {"service"=>"Disk", "root"=>"/Users/Batu/MyData/MSMI/public"}
+    # => Service {"service"=>"Aliyun", "access_key_id"=>"LTAstqjJprAvcw", "access_key_secret"=>"2NAqquRz742595Yi1mU", "endpoint"=>"oss-cn-beijing.aliyuncs.com", "bucket"=>"msmi-mapplaytest"}
+    @save_tag ||= Rails.application.config_for(:storage, env: Rails.application.config.active_storage.service.to_s)
+  end
+
+  # 自动创建bucket太复杂，包括命名，权限，生命管理等，暂时不用
+  # oss 设置：
+  # => 1 创建一个与app绑定的bucket
+  # => 2 设置为公共读
+  # => 3 根据需要设置生命周期，定时清理
+  # => 4 创建图片或视频的预览图
+  # => 5 视频和音频的时长
+  def _create_bucket
+    # 用app_id创建一个bucket
+    # 修正app_id使其可以用来创建bucket,只允许小写字母、数字、短横线（-），且不能以短横线开头或结尾
+    appid = current_user['app_id'].downcase.delete(current_user['app_id'].downcase.delete('-0123456789abcdefghigklmnopqrstuvwxyz'))
+    bucket_name = "msmi-#{appid}"
+    al_client.create_bucket(bucket_name) unless al_client.bucket_exists?(bucket_name)
+    bucket = al_client.get_bucket(bucket_name)
+    bucket.acl = Aliyun::OSS::ACL::PUBLIC_READ
+    puts bucket.acl
+    bucket
+  end
+
 end
+
+
+
