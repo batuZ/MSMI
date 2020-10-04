@@ -16,7 +16,7 @@
 
 * 只能在开发环境访问
 	```ruby
-	get: 127.0.0.1:3000/doc # 只能在开发环境访问
+	get: 127.0.0.1:3000/doc
 	``` 
 
 #### 流程：
@@ -36,8 +36,12 @@
 	post: 127.0.0.1:3000/message?tag_id=Identifier&text=message
 	```
 
-### Android client demo: 
-	https://github.com/batuZ/MSMI_Client
+### Android client demo[https://github.com/batuZ/MSMI_Client]
+
+#### 配置服务：
+	
+	* 在`config/storage.yml`中配置聊天附件存储方式
+	* 在`config/cable.yml`中配置redis服务
 
 
 TODO:
