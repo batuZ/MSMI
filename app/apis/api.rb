@@ -7,26 +7,30 @@ class API < Grape::API
 	# 应用的唯一标识，不能重复，最小长度为两个字符
 	# 功能类似namespace
 	# 未注册不能创建usertoken
-	desc '创建app'
+	desc '创建app', tags: ['APP'], summary: '由管理员在MSMI后台控制，管理应用级属性'	
 	params do
 		requires :app, type: String, desc: 'app名称或标识字符串，全局唯一'
+		optional :ownner, type: String, desc: 'app管理员'
+		optional :email, type: String, desc: '联系方式'
+		optional :max_users, type: Integer, desc: '人数上限'
+		optional :lease_length, type: Integer, desc: '租赁期，秒'
 	end
 	post :app do
 		msErr!('应用已存在', 1003) if app?(params[:app])
 		msErr!('应用名称不合法', 1005) if params[:app].size < 3 # => or other
 		sk = UUIDTools::UUID.timestamp_create.to_s.gsub('-','')
 		redis.hset 'apps', params[:app], {
-			create_time: Time.now.to_i,
-			max_lenght: 1.year,
-			max_users: 100,
-			secret_key: sk,
-			ownner: '',
-			email: ''
+			create_time: 	Time.now.to_i,
+			lease_length: params[:lease_length] 	|| 1.year,
+			max_users: 		params[:max_users] 			|| 100,
+			secret_key: 	sk,
+			ownner: 			params[:ownner] 				|| '',
+			email: 				params[:email] 					|| ''
 		}.to_json
 		msReturn(app_name: params[:app], secret_key: sk)
 	end
 
-	desc '使用云存储时，下载文件'
+	desc '下载文件，拼接方式: [https://www.example.com/msmi_file/(固定部份)] + [preview/xxxx.jpg(消息中的部份)]', tags: ['APP'], summary: '使用云存储时，下载聊天附件的统一接口'		
 	route :get, '/msmi_file/*/*' do
 		unless save_tag["service"].eql?("Disk")
 			tag_type = params["splat"].first # => 当用云时：original or preview | 当用本地存时： app_id
@@ -44,14 +48,15 @@ class API < Grape::API
 			redirect url
 		end
 	end
-# ========================= USER =========================
+
 
 	# 使用已注册的应用名
 	# 自行维护user_id，重复的id将被覆盖
 	# token包含用户名、用户头像，也就是说修改用户名需要重新创建token
 	# token是发送消息时，身份验证的依据
 	# TODO: 验证签名方式
-	desc '创建用户token，如果user_id已存在则是覆盖，可用于修改用户名和头像'	
+	desc 'chat_token用来识别用户身份并携带相关信息，是发起聊天的必要内容，如果user_id已存在则是覆盖，可用于修改用户名和头像', 
+	tags: ['APP'], summary: '创建用户的chat_token'		
 	params do
 		requires :app_id,	type: String,	desc: '应用标识'
 		requires :secret_key,	type: String,	desc: '应用密钥'
@@ -70,7 +75,9 @@ class API < Grape::API
 		msReturn token
 	end
 
-	desc '用户设置：加好友条件,和其它setting'	
+# ========================= USER =========================
+	desc '用户设置：加好友条件,和其它setting', 
+	tags: ['USERS'], summary: '用户设置'		
 	params do
 		optional :approve, type: Integer, desc: '加好友条件：0-不需要审批，直接添加（默认），1-需要审批'
 	end
@@ -80,9 +87,20 @@ class API < Grape::API
 		msReturn
 	end
 
+	# desc '是否在线', tags: ['USERS']	
+	# params do
+	# 	requires :tag_id,	type: String,	desc: '目标id'
+	# end
+	# get :online do
+	# 	ActionCable.server.connections.map(&:current_user).map(&:user_id) & [params[:tag_id]]
+	# 	# => [1,2,3] & [0,2,4] # => [2]
+	# 	# ActionCable.server.broadcast(params[:tag_id], current_user)
+	# 	# ActionCable.server.connections.first.connection_identifier
+	# 	# => ActionCable.server.connections.first.current_user
+	# end
 # ========================= FRIENDS =========================
 
-	desc '添加好友', summary: '添加好友'
+	desc '添加好友', summary: '添加好友', tags: ['FRIENDS']
 	params do
 		requires :user_id, type: String
 		optional :remark, type:String, desc: '备注'
@@ -115,7 +133,7 @@ class API < Grape::API
 		end
 	end
 
-	desc '审批好友审请', summary: '审批好友审请'
+	desc '审批好友审请', summary: '审批好友审请', tags: ['FRIENDS']
 	params do
 		requires :user_id, type: String
 		requires :judgment, type: Boolean, desc: '是否通过申请，通过 true, 拒绝 false	' 
@@ -133,7 +151,7 @@ class API < Grape::API
 		msReturn
 	end
 
-	desc '删除好友'
+	desc '删除好友', tags: ['FRIENDS'], summary: '删除好友'
 	params do
 		requires :user_id, type: String
 	end
@@ -143,7 +161,7 @@ class API < Grape::API
 		msReturn users: get_users_by(redis.zrange(f_list_key, 0, -1))
 	end
 
-	desc '获取好友列表'
+	desc '获取好友列表', tags: ['FRIENDS'], summary: '获取好友列表'
 	get :friends do
 		authenticate_user!
 		msReturn users: get_users_by(f_list)
@@ -151,7 +169,7 @@ class API < Grape::API
 
 # ========================= SHIELD =========================
 
-	desc '增加屏蔽用户'
+	desc '增加屏蔽用户', tags: ['SHEILD'], summary: '增加屏蔽用户'
 	params do
 		requires :user_id, type: String
 	end
@@ -164,7 +182,7 @@ class API < Grape::API
 		msReturn users: get_users_by(s_list)
 	end
 
-	desc '删除屏蔽用户'
+	desc '删除屏蔽用户', tags: ['SHEILD'], summary: '删除屏蔽用户'
 	params do
 		requires :user_id, type: String
 	end
@@ -174,34 +192,24 @@ class API < Grape::API
 		msReturn users: get_users_by(s_list)
 	end
 
-	desc '获取屏蔽列表'
+	desc '获取屏蔽列表', tags: ['SHEILD'], summary: '获取屏蔽列表'
 	get :shield do
 		authenticate_user!
 		msReturn users: get_users_by(s_list)
 	end
 
-	desc '是否在线'
-	params do
-		requires :tag_id,	type: String,	desc: '目标id'
-	end
-	get :online do
-		ActionCable.server.connections.map(&:current_user).map(&:user_id) & [params[:tag_id]]
-		# => [1,2,3] & [0,2,4] # => [2]
-		# ActionCable.server.broadcast(params[:tag_id], current_user)
-		# ActionCable.server.connections.first.connection_identifier
-		# => ActionCable.server.connections.first.current_user
-	end
+	
 
 # ========================= GROUP =========================
 
-	desc '我的群列表'
+	desc '我的群列表', tags: ['GROUPS'], summary: '群列表'
 	get :groups do
 		authenticate_user!
 		# 遍历群信息集合，判断群的用户集中找当前用户的索引，没有此成员返回nil，有返回json化的对象，后最去nil
 		msReturn(groups: my_groups) 
 	end
 
-	desc '创建群'
+	desc '创建群', tags: ['GROUPS'], summary: '创建群'
 	params do
 		optional :group_name, type: String
 		optional :group_icon, type: String
@@ -222,7 +230,7 @@ class API < Grape::API
 		msReturn(new_group_id: gid, groups: my_groups) 
 	end
 
-	desc '解散群'
+	desc '解散群', tags: ['GROUPS'], summary: '解散群'
 	params do
 		requires :group_id,	type: String,	desc: '目标群id'
 	end
@@ -236,7 +244,7 @@ class API < Grape::API
 		msReturn(groups: my_groups)  
 	end
 
-	desc '群设置：approve-加群条件'	
+	desc '群设置：approve-加群条件', tags: ['GROUPS'], summary: '群设置'	
 	params do
 		requires :group_id,	type: String,	desc: '目标群id'
 		optional :approve, type: Integer, desc: '加群条件：0-不需要审批，直接添加（默认），1-需要审批'
@@ -251,7 +259,8 @@ class API < Grape::API
 	end
 # ========================= MEMBERS =========================
 
-	desc '获取成员列表, 0: 群主，小于10是管理员，时间戳表示的是成员和加入时间'
+	desc '获取成员列表, 0: 群主，小于10是管理员，时间戳表示的是成员和加入时间', 
+	tags: ['MEMBERS'], summary: '获取成员列表'	
 	params do
 		requires :group_id, type: String
 	end
@@ -263,7 +272,7 @@ class API < Grape::API
 		msReturn(members: get_members_by_group_id(params[:group_id]))
 	end
 
-	desc '添加成员'
+	desc '添加成员', tags: ['MEMBERS'], summary: '添加成员'	
 	params do
 		requires :group_id, type: String
 		requires :members, type: Array
@@ -282,7 +291,7 @@ class API < Grape::API
 	end
 
 
-	desc '审批进群审请', summary: '审批进群审请'
+	desc '审批进群审请', summary: '审批进群审请', tags: ['MEMBERS']
 	params do
 		requires :group_id, type: String
 		requires :user_id, type: String
@@ -302,7 +311,7 @@ class API < Grape::API
 		msReturn
 	end
 
-	desc '移除成员'
+	desc '移除成员', tags: ['MEMBERS'], summary: '移除成员'	
 	params do
 		requires :group_id, type: String
 		requires :members, type: Array
@@ -324,7 +333,7 @@ class API < Grape::API
 		msReturn(members: get_members_by_group_id(params[:group_id]))
 	end
 
-	desc '加入群'
+	desc '加入群', tags: ['MEMBERS'], summary: '加入群'	
 	params do
 		requires :group_id,	type: String,	desc: '目标群id'
 		optional :remark, type: String, desc: '备注'
@@ -355,7 +364,7 @@ class API < Grape::API
 		end
 	end
 
-	desc '退群' 
+	desc '退群' , tags: ['MEMBERS'], summary: '退群'	
 	params do
 		requires :group_id,	type: String,	desc: '目标群id'
 	end
@@ -368,4 +377,19 @@ class API < Grape::API
 	end
 
 	mount MessageAPI
+	add_swagger_documentation(
+		info: {
+	    contact_name: "Batu",
+	    contact_email: "304701204@qq.com"
+	  },
+		tags: [
+					{ name: 'GROUPS', description: '群接口' },
+					{ name: 'MEMBERS', description: '群成员接口' },
+					{ name: 'FRIENDS', description: '好友接口' },
+					{ name: 'USERS', description: '用户接口' },
+					{ name: 'SHEILD', description: '屏蔽接口' },
+					{ name: 'APP', description: '应用接口' },
+					{ name: 'MESSAGES', description: '发送消息接口' },
+		  	]
+		)
 end

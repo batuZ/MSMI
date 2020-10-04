@@ -1,7 +1,7 @@
 class MessageAPI < Grape::API
 	resources :message do
 
-		desc '单聊', summary: '单聊'
+		desc '单聊', summary: '单聊', tags: ['MESSAGES']
 		params do
 			requires :user_id,	type: String,	desc: '目标id'
 			optional :content,		type: String,	desc: '消息中的文字内容'
@@ -15,8 +15,7 @@ class MessageAPI < Grape::API
 			if s_list(params[:user_id]).include?(current_user['identifier'])
 				msReturn('','你已被此用户屏蔽')
 			else
-				byebug
-				original, preview = save_file(params[:file].tempfile.path)
+				original, preview = save_file(params[:file].tempfile.path) if params[:file]
 				send_data = {
 					session_type: 'single_chat',
 					session_identifier: current_user['identifier'],
@@ -37,7 +36,7 @@ class MessageAPI < Grape::API
 			end
 		end
 
-		desc '发送消息到群，群聊'
+		desc '发送消息到群，群聊', tags: ['MESSAGES'], summary: '群聊'	
 		params do
 			requires :group_id,	type: String,	desc: '目标群id'
 			requires :content,		type: String,	desc: '消息中的文字内容'

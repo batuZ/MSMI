@@ -196,10 +196,10 @@ module ApplicationHelper
         file_path = File.join(save_tag["root"], current_user['app_id'], file_name)
         FileUtils.mkdir_p(File.dirname(file_path), :mode => 0700)
         FileUtils.move(tempfile_path, file_path)
-        ["msmi_file/original/#{file_name}", "msmi_file/preview/#{file_name}"]
+        ["#{current_user['app_id']}/#{file_name}", "#{current_user['app_id']}/#{file_name}"]
       else
         al_bucket.put_object(File.basename(tempfile_path), :file => tempfile_path)
-        ["#{current_user['app_id']}/#{file_name}", "#{current_user['app_id']}/#{file_name}"]
+        ["msmi_file/original/#{file_name}", "msmi_file/preview/#{file_name}"]
       end
     end
   end
