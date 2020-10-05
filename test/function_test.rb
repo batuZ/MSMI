@@ -47,8 +47,8 @@ pp hs['a']
 
 # ============================= redis =============================
 
- # https://www.rubydoc.info/github/redis/redis-rb/master/Redis/Distributed#lpush-instance_method
- # 中文详解： https://www.cnblogs.com/funyoung/p/10730525.html
+# https://www.rubydoc.info/github/redis/redis-rb/master/Redis/Distributed#lpush-instance_method
+# 中文详解： https://www.cnblogs.com/funyoung/p/10730525.html
 
 
 # require "redis"

@@ -64,7 +64,7 @@ RSpec.describe 'API', type: :request do
     expect(_code).to be == 1000
     groupid = _content['new_group_id']
 
-    post '/message/group', params:{user_id: groupid, content: 'asdf'}, headers:{'Msmi-Token' => token1}
+    post '/message/group', params:{group_id: groupid, content: 'asdf'}, headers:{'Msmi-Token' => token1}
      expect(_code).to be == 1000
     # ___show _content
   end
@@ -94,11 +94,10 @@ RSpec.describe 'API', type: :request do
 
   it '设置approve， 加好友， 审批好友审请' do
     create_app;token1;token2;token3
-    post '/setting',  params: {approve: 1}, headers:{'Msmi-Token' => token1}
+    post '/user_setting',  params: {approve: 1}, headers:{'Msmi-Token' => token1}
     expect(_code).to be == 1000 # 设置approve
     post '/friends', params: {user_id: 'user_1'}, headers:{'Msmi-Token' => token3}
     expect(_code).to be == 1000 # 加好友
-    byebug
     post '/judgment',  params: {user_id: 'user_3', judgment: true}, headers:{'Msmi-Token' => token1}
     expect(_code).to be == 1000 # 审批好友审请
     # ___show _content

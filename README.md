@@ -15,24 +15,24 @@
 #### API文档:
 
 * 只能在开发环境访问
-	```ruby
+	```
 	get: 127.0.0.1:3000/doc
 	``` 
 
 #### 流程：
 
 * 通过api创建应用组[管理员]
-	```ruby
+	```
 	post: 127.0.0.1:3000/app?app_name=APP_NAME # 获取id key
 	``` 
 
 * 通过api创建用户token[管理员]
-	```ruby
+	```
 	post: 127.0.0.1:3000/user/token?user_id=Identifier&user_name=Tom&avatar_url=https:xxx.xxx.com/xx.jpg&app_id=APP_NAME
 	```
 
 * 通过api发送消息[用户]
-	```ruby
+	```
 	post: 127.0.0.1:3000/message?tag_id=Identifier&text=message
 	```
 ### 客户端示例
@@ -41,9 +41,9 @@
 
 #### 配置服务：
 	
-	在 `config/storage.yml` 中配置聊天附件存储方式
+> 在`config/storage.yml`中配置聊天附件存储方式
 
-	在 `config/cable.yml` 中配置redis服务
+> 在`config/cable.yml`中配置redis服务
 
 
 TODO:

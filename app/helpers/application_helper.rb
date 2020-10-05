@@ -2,21 +2,21 @@ module ApplicationHelper
 
 #======================= token =================================
 
-	def create_token params
+  def create_token params
     token = JWT.encode(params, 'test_hash_key')
     header('Msmi-Token', token)
     token
-	end
+  end
 
-	def decode_token token
-		JWT.decode(token, 'test_hash_key')
-	end
+  def decode_token token
+    JWT.decode(token, 'test_hash_key')
+  end
 
-	# 验证token，获取用户
+  # 验证token，获取用户
   def authenticate_user!
-  	begin
-  		@current_user, _  = decode_token(headers['Msmi-Token']) # 找不到会抛异常
-      msErr!('用户身份未通过验证', 1007) if @current_user.nil? 
+    begin
+      @current_user, _ = decode_token(headers['Msmi-Token']) # 找不到会抛异常
+      msErr!('用户身份未通过验证', 1007) if @current_user.nil?
       msErr!('app_id未通过验证', 1006) unless app?(@current_user['app_id'])
     rescue StandardError
     end
@@ -25,34 +25,34 @@ module ApplicationHelper
   # connection 验证用户用的
   def authenticate_user token
     begin
-      @current_user, _  = decode_token(token) # 找不到会抛异常
+      @current_user, _ = decode_token(token) # 找不到会抛异常
     rescue StandardError
     end
   end
 
   # 获取当前用户
   def current_user
-  	@current_user
+    @current_user
   end
 
   def is_online *ids
-    online_ids = ActionCable.server.connections.map{|connect| connect.current_user.identifier}
+    online_ids = ActionCable.server.connections.map { |connect| connect.current_user.identifier }
     ids & online_ids
   end
 
-#======================= response =================================
+  #======================= response =================================
 
   # response
-  def msReturn dic={}, msg='OK'
-  	status 200
-  	{ ms_content: dic, ms_code: 1000, ms_message: msg }
+  def msReturn dic = {}, msg = 'OK'
+    status 200
+    {ms_content: dic, ms_code: 1000, ms_message: msg}
   end
 
   def msErr! msg, code
-  	throw :error, message: {ms_message: msg, ms_code: code}, status: 200, headers: header
+    throw :error, message: {ms_message: msg, ms_code: code}, status: 200, headers: header
   end
 
-#======================= redis =================================
+  #======================= redis =================================
 
   # redis对象
   def redis
@@ -70,20 +70,21 @@ module ApplicationHelper
   end
 
   # 推送数据，或离线缓存
-  def push_data tagets_arr, send_data 
+  def push_data tagets_arr, send_data
     res = 0
     tagets_arr.each do |tag|
       send_to = u_key(tag)
       is_pushed = ActionCable.server.broadcast(send_to, send_data)
       if is_pushed == 0
-        hold = {send_to: send_to, send_data: send_data }
+        hold = {send_to: send_to, send_data: send_data}
         redis.setex("#{send_to}:messages:#{Time.now.to_i}", 1.hour.to_i, hold.to_json)
       end
       res += is_pushed
     end
     res
   end
-#======================= groups =================================
+
+  #======================= groups =================================
 
   # 获取群信息
   def group_info app_id, group_id
@@ -96,7 +97,7 @@ module ApplicationHelper
   end
 
   # 群的key
-  def g_key g_id 
+  def g_key g_id
     "#{g_list}:#{g_id}"
   end
 
@@ -107,25 +108,25 @@ module ApplicationHelper
 
   # 有我的群
   def my_groups
-    redis.hscan(g_list,0).second.map{|g_info| redis.zrank(g_info.first, current_user['identifier']) ? JSON.parse(g_info.second) : nil }.compact
+    redis.hscan(g_list, 0).second.map { |g_info| redis.zrank(g_info.first, current_user['identifier']) ? JSON.parse(g_info.second) : nil }.compact
   end
 
   # 我创建的群
   def mine_gropus
-    redis.hscan(g_list,0).second.map{|g_info| redis.zrank(g_info.first, current_user['identifier'])==0 ? JSON.parse(g_info.second) : nil }.compact
+    redis.hscan(g_list, 0).second.map { |g_info| redis.zrank(g_info.first, current_user['identifier']) == 0 ? JSON.parse(g_info.second) : nil }.compact
   end
 
   # 获取群中成员详细信息
   def get_members_by_group_id group_id
     group_key = g_key(group_id)
-    redis.zrem(group_key, (redis.zrange(group_key, 0, -1) - redis.hkeys(u_list))|[nil]) # => 移除群中无效的成员
+    redis.zrem(group_key, (redis.zrange(group_key, 0, -1) - redis.hkeys(u_list)) | [nil]) # => 移除群中无效的成员
     redis.hmget(u_list, redis.zrange(group_key, 0, -1))
-      .zip(redis.zrange(group_key, 0, -1, withscores: true))
-      .map{ |e|  JSON.parse(e.first).merge!({member_type: e.second.second}) if e.first }
-      .compact
+        .zip(redis.zrange(group_key, 0, -1, withscores: true))
+        .map { |e| JSON.parse(e.first).merge!({member_type: e.second.second}) if e.first }
+        .compact
   end
-  
-#======================= user =================================
+
+  #======================= user =================================
 
   # 用户列表
   def u_list
@@ -133,37 +134,37 @@ module ApplicationHelper
   end
 
   # 指定用户的key
-  def u_key u_id=nil
-    "#{u_list}:#{u_id||current_user['identifier']}"
+  def u_key u_id = nil
+    "#{u_list}:#{u_id || current_user['identifier']}"
   end
 
   # 用户设置的key
-  def u_setting_key u_id=nil
+  def u_setting_key u_id = nil
     "#{u_key(u_id)}:setting"
   end
 
   # 发送者的信息
   def sender
     {
-      identifier: current_user['identifier'],
-      name: current_user['name'],
-      avatar:  current_user['avatar']
+        identifier: current_user['identifier'],
+        name: current_user['name'],
+        avatar: current_user['avatar']
     }
   end
 
   # 获取用户信息
   def get_users_by identifiers
     if identifiers.present?
-      redis.hmget(u_list, identifiers).compact.map{|a| JSON.parse a}
+      redis.hmget(u_list, identifiers).compact.map { |a| JSON.parse a }
     else
       []
     end
   end
 
-#======================= friends shield =================================
+  #======================= friends shield =================================
 
   # 好友列表键
-  def f_list_key u_id=nil
+  def f_list_key u_id = nil
     "#{u_key(u_id)}:friends"
   end
 
@@ -178,17 +179,17 @@ module ApplicationHelper
   end
 
   # 指定用户的屏蔽表列键， nil=当前用户的 # => 'mapplay:users:Nigulash_ShuFen:shield'
-  def s_list_key u_id=nil
+  def s_list_key u_id = nil
     "#{u_key(u_id)}:shield"
   end
 
   # 指定用户的屏蔽表列， nil=当前用户的 # => ['Nigulash_ShuFen', 'Nigulash_ShuFen']
-  def s_list u_id=nil
+  def s_list u_id = nil
     redis.zrange(s_list_key(u_id), 0, -1)
   end
 
-#======================= file =================================
-  
+  #======================= file =================================
+
   def save_file tempfile_path
     if File.exist?(tempfile_path) && File.file?(tempfile_path)
       file_name = File.basename(tempfile_path)
@@ -206,9 +207,9 @@ module ApplicationHelper
 
   def al_bucket
     @al_client ||= Aliyun::OSS::Client.new(
-      endpoint: save_tag['endpoint'],
-      access_key_id: save_tag['access_key_id'],
-      access_key_secret: save_tag['access_key_secret'])
+        endpoint: save_tag['endpoint'],
+        access_key_id: save_tag['access_key_id'],
+        access_key_secret: save_tag['access_key_secret'])
     @al_client.get_bucket(save_tag['bucket'])
   end
 

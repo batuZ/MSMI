@@ -38,3 +38,7 @@ dump.rdb
 sftp-config.json
 
 Gemfile.lock
+/.idea/
+/public/mapplay/
+app/assets/images/ad.mp3
+app/assets/images/avatar_1.jpg
