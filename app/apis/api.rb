@@ -119,13 +119,12 @@ class API < Grape::API
       send_data = {
           session_type: 'system_message',
           session_identifier: 'judgment',
-          session_icon: 'http://sys/image/frinds.jpg',
-          session_title: '好友提醒',
+          session_icon: current_user['avatar'],
+          session_title: '加好友审请',
           sender: sender,
           send_time: Time.now.to_i,
           content_type: 'friends_judgment',
-          content: params[:remark] || "#{user['name']}申请加你为好友。",
-          preview: ''
+          content: params[:remark] || "#{user['name']}申请加你为好友。"
       }
       push_data([params[:user_id]], send_data)
       redis.zadd(f_list_key, -1 * Time.now.to_i, params[:user_id]) #用name的ASC值排序
@@ -144,11 +143,22 @@ class API < Grape::API
     msErr!('不能对自己进行操作', 1004) if params[:user_id].eql?(current_user['identifier'])
     msErr!('无效的审请记录', 1005) unless un_f_list(params[:user_id]).include?(current_user['identifier'])
     if (params[:judgment])
+      send_data = {
+          session_type: 'system_message',
+          session_identifier: 'prompt',
+          session_icon: current_user['avatar'],
+          session_title: '提醒',
+          sender: sender,
+          send_time: Time.now.to_i,
+          content_type: 'friends_prompt',
+          content: "#{current_user['name']}通过了你的审请，你们现在是好友了。"
+      }
+      push_data([params[:user_id]], send_data)
       redis.zadd(f_list_key(params[:user_id]), eval(current_user['name'].codepoints.join '+'), current_user['identifier'])
     else
       redis.zrem(f_list_key(params[:user_id]), current_user['identifier'])
     end
-    msReturn
+    msReturn users: get_users_by(redis.zrange(f_list_key, 0, -1))
   end
 
   desc '删除好友', tags: ['FRIENDS'], summary: '删除好友'
@@ -350,14 +360,14 @@ class API < Grape::API
       send_data = {
           session_type: 'system_message',
           session_identifier: 'judgment',
-          session_icon: 'http://sys/image/frinds.jpg',
-          session_title: '群提醒',
+          session_icon: sender['avatar'],
+          session_title: '进群审请',
           sender: sender,
           send_time: Time.now.to_i,
           content_type: 'group_judgment',
-          content: params[:remark] || "#{current_user['name']}申请加入群#{group[:name]}。",
-          preview: ''
+          content: params[:remark] || "#{current_user['name']}申请加入群#{group[:name]}。"
       }
+
       push_data(redis.zrangebyscore(group_key, 0, 10), send_data)
       msReturn('', '已发出审请，等待对方确认')
     end

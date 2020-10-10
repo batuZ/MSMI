@@ -59,6 +59,7 @@ gem 'uuidtools'
 
 # 阿里云rubysdk, 手动管理OSS  https://help.aliyun.com/document_detail/32115.html?spm=a2c4g.11186623.6.1136.368f20bePH6jFP
 gem 'aliyun-sdk'
+gem 'activestorage-aliyun'
 
 # Use ActiveStorage variant
 # gem 'mini_magick', '~> 4.8'
@@ -77,6 +78,7 @@ gem 'bootsnap', '>= 1.1.0', require: false
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
+  gem 'pry-rails' # 不错的调试工具
   # gem 'debase', '~> 0.2.4.1'  # 这个装不上
   # gem 'ruby-debug-ide', '~> 0.7.2'
   # gem 'debugger2'
