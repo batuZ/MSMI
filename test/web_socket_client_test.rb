@@ -4,21 +4,21 @@ require 'websocket-eventmachine-client'
 require 'pp'
 require 'json'
 
-# user = {
-#   user_id: 'Daogelasi_JianGuo',
-#   user_name: '道格拉斯·建国',
-#   avatar_url: 'https://images.12306.com/avatar/img_3617.jpg',
-#   app_id: 'mapplay',
-#   token: 'eyJhbGciOiJIUzI1NiJ9.eyJpZGVudGlmaWVyIjoiRGFvZ2VsYXNpX0ppYW5HdW8iLCJuYW1lIjoi6YGT5qC85ouJ5pavwrflu7rlm70iLCJhdmF0YXIiOiJodHRwczovL2ltYWdlcy4xMjMwNi5jb20vYXZhdGFyL2ltZ18zNjE3LmpwZyIsImFwcF9pZCI6Im1hcHBsYXkifQ.3jgZIKdd6Xst-F7u0ZAN0Wx_i9MzDywYbSJU9dCSiaw'
-# } 
-
 user = {
-  user_id: 'Nigulash_ShuFen',
-  user_name: '尼古拉斯·淑芬',
-  avatar_url: 'https://images.12306.com/avatar/img_9983.jpg',
+  user_id: 'Daogelasi_JianGuo',
+  user_name: '道格拉斯·建国',
+  avatar_url: 'https://images.12306.com/avatar/img_3617.jpg',
   app_id: 'mapplay',
-  token: 'eyJhbGciOiJIUzI1NiJ9.eyJpZGVudGlmaWVyIjoiTmlndWxhc2hfU2h1RmVuIiwibmFtZSI6IuWwvOWPpOaLieaWr8K35reR6IqsIiwiYXZhdGFyIjoiaHR0cHM6Ly9pbWFnZXMuMTIzMDYuY29tL2F2YXRhci9pbWdfOTk4My5qcGciLCJhcHBfaWQiOiJtYXBwbGF5In0.Sb9jexLCx90vCf4lDKb2_ZF4hoT9je89la_btMmi8Sw'
-} 
+  token: 'eyJhbGciOiJIUzI1NiJ9.eyJpZGVudGlmaWVyIjoiRGFvZ2VsYXNpX0ppYW5HdW8iLCJuYW1lIjoi6YGT5qC85ouJ5pavwrflu7rlm70iLCJhdmF0YXIiOiJodHRwczovL2ltYWdlcy4xMjMwNi5jb20vYXZhdGFyL2ltZ18zNjE3LmpwZyIsImFwcF9pZCI6Im1hcHBsYXkifQ.3jgZIKdd6Xst-F7u0ZAN0Wx_i9MzDywYbSJU9dCSiaw'
+}
+
+# user = {
+#   user_id: 'Nigulash_ShuFen',
+#   user_name: '尼古拉斯·淑芬',
+#   avatar_url: 'https://images.12306.com/avatar/img_9983.jpg',
+#   app_id: 'mapplay',
+#   token: 'eyJhbGciOiJIUzI1NiJ9.eyJpZGVudGlmaWVyIjoiTmlndWxhc2hfU2h1RmVuIiwibmFtZSI6IuWwvOWPpOaLieaWr8K35reR6IqsIiwiYXZhdGFyIjoiaHR0cHM6Ly9pbWFnZXMuMTIzMDYuY29tL2F2YXRhci9pbWdfOTk4My5qcGciLCJhcHBfaWQiOiJtYXBwbGF5In0.Sb9jexLCx90vCf4lDKb2_ZF4hoT9je89la_btMmi8Sw'
+# }
 
 # user = {
 #   user_id: 'Aixinjueluo_TieDan',
@@ -29,7 +29,7 @@ user = {
 # } 
 
 EM.run do
-  ws = WebSocket::EventMachine::Client.connect(:uri => 'ws://39.107.250.142:3000/cable',headers: {msmi_token:  user[:token]})
+  ws = WebSocket::EventMachine::Client.connect(:uri => 'wss://www.mapplay.cn:3334/cable',headers: {'msmi-token' =>  user[:token]})
   # ws = WebSocket::EventMachine::Client.connect(:uri => 'ws://127.0.0.1:3000/cable',headers: {msmi_token:  sf_token})
   
   ws.onopen do

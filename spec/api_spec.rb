@@ -48,6 +48,7 @@ RSpec.describe 'API', type: :request do
     post '/message/single', params:{
       user_id: 'user_3', 
       content: 'asdf',
+      content_type: 'image',
       file: fixture_file_upload('app/assets/images/avatar_1.jpg','image/jpeg')
     }, headers:{'Msmi-Token' => token1}
     expect(_code).to be == 1000
@@ -64,7 +65,7 @@ RSpec.describe 'API', type: :request do
     expect(_code).to be == 1000
     groupid = _content['new_group_id']
 
-    post '/message/group', params:{group_id: groupid, content: 'asdf'}, headers:{'Msmi-Token' => token1}
+    post '/message/group', params:{group_id: groupid, content: 'asdf', content_type: 'text'}, headers:{'Msmi-Token' => token1}
      expect(_code).to be == 1000
     # ___show _content
   end
