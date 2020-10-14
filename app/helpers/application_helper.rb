@@ -51,7 +51,12 @@ module ApplicationHelper
   def msErr! msg, code
     throw :error, message: {ms_message: msg, ms_code: code}, status: 200, headers: header
   end
-
+  
+  # 着色控制台输出，0 黑色;1 红色;2 绿色;3 黄色;4 蓝色;5 紫红色;6 青蓝色;7 白色
+  def putf str, txtcoler=1, backcolor=3
+    # printf '\033[31;43m ... \033[39;49m\n'
+    system "printf '\033[3#{txtcoler};4#{backcolor}m#{str}\033[39;49m\n'"
+  end
   #======================= redis =================================
 
   # redis对象

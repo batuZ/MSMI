@@ -38,10 +38,10 @@ class API < Grape::API
       tag_format = params["format"] # => jpg mp4 mp3
       url = "https://#{save_tag["bucket"]}.#{save_tag["endpoint"]}/#{tag_name}.#{tag_format}"
       # => 如果path中带preview,则通过oss提供的功能处理预览图
-      if tag_type.eql?('preview') && ['jpg', 'jpge', 'png'].include?(tag_format.downcase)
-        url += "?x-oss-process=image/auto-orient,1/resize,m_lfit,w_300/quality,q_60/format,jpg"
+      if tag_type.eql?('preview') && ['jpg', 'jpeg', 'png'].include?(tag_format.downcase)
+        url += "?x-oss-process=image/auto-orient,1/resize,m_lfit,w_400,h_400,limit_0/quality,q_70/format,jpg"
       elsif tag_type.eql?('preview') && tag_format.eql?('mp4')
-        url += "?x-oss-process=video/snapshot,t_1000,f_jpg,w_300,h_0,m_fast"
+        url += "?x-oss-process=video/snapshot,t_1000,f_jpg,w_400,h_0,m_fast"
       else
         # audio? file?
       end
@@ -49,8 +49,7 @@ class API < Grape::API
     end
   end
 
-
-# 使用已注册的应用名
+# 使用已注册的应用名 
 # 自行维护user_id，重复的id将被覆盖
 # token包含用户名、用户头像，也就是说修改用户名需要重新创建token
 # token是发送消息时，身份验证的依据
@@ -386,6 +385,11 @@ class API < Grape::API
   end
 
   mount MessageAPI
+  desc '处理未知请求', hidden: true
+  route :any, '*path' do
+    putf ">> #{params['path']} 没有找到接口 <<"
+    error!({error: '没有可以响应的接口'},404)
+  end
   add_swagger_documentation(
       info: {
           contact_name: "Batu",
