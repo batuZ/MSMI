@@ -64,8 +64,7 @@ class API < Grape::API
     requires :avatar, type: String, desc: '用户头像url'
   end
   post :token do
-    msErr!('app_id或secret_key不合法', 1003) unless app?(params[:app_id])
-    msErr!('app_id或secret_key不合法', 1003) unless app_info(params[:app_id])['secret_key'].eql?(params[:secret_key])
+    authenticate_app!
     # 用params创建新的token，不需要包含secret_key
     params.delete(:secret_key)
     token = create_token(params)

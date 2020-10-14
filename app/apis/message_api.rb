@@ -8,6 +8,7 @@ class MessageAPI < Grape::API
       optional :content, type: String, desc: '消息中的文字内容'
       optional :file, type: ActionDispatch::Http::UploadedFile, coerce_with: ->(c) { ActionDispatch::Http::UploadedFile.new(c) },
                desc: '图片、视频或音频文件', documentation: {param_type: 'formData', type: 'File'}
+      optional :information, type: String , desc: 'json string, 自定义信息, 如目标对象信息' 
       at_least_one_of :content, :file, desc: 'content参数和file至少有其一'
     end
     post :single do
@@ -27,7 +28,8 @@ class MessageAPI < Grape::API
           content_type: params[:content_type],
           content: params[:content],
           content_file: original,
-          content_preview: preview
+          content_preview: preview, 
+          information: params[:information]
         }
         if push_data([params[:user_id]], send_data) == 0
           msReturn('', '用户不在线，消息已缓存')
@@ -44,6 +46,7 @@ class MessageAPI < Grape::API
       optional :content, type: String, desc: '消息中的文字内容'
       optional :file, type: ActionDispatch::Http::UploadedFile, coerce_with: ->(c) { ActionDispatch::Http::UploadedFile.new(c) },
                desc: '图片、视频或音频文件', documentation: {param_type: 'formData', type: 'File'}
+      optional :information, type: String, desc: 'json string, 自定义信息, 如目标对象信息' 
       at_least_one_of :content, :file, desc: 'content参数和file至少有其一'
     end
     post :group do
@@ -63,11 +66,54 @@ class MessageAPI < Grape::API
         content_type: params[:content_type],
         content: params[:content],
         content_file: original,
-        content_preview: preview
+        content_preview: preview,
+        information: params[:information]  
       }
       members = redis.zrange(group_key, 0, -1)
       members.delete(current_user['identifier'])
       push_data(members, send_data)
+      msReturn('', 'OK')
+    end
+
+    desc '系统消息', tags: ['MESSAGES'], summary: '系统消息'
+    params do
+      requires :app_id, type: String, desc: '应用标识'
+      requires :secret_key, type: String, desc: '应用密钥'
+
+      requires :session_identifier, type: String, desc: '会话的唯一标识'
+      optional :session_icon, type: String, desc: '会话的图标'
+      optional :session_title, type: String, desc: '会话的标题'
+
+      requires :sender_identifier, type: String, desc: '发起者的id'
+      requires :sender_name, type: String, desc: '发起者的名字'
+      requires :sender_avatar, type: String, desc: '发起者的头像'
+
+      requires :user_id, type: String, desc: '目标id'
+      requires :content_type, type: String, desc: '消息类型'
+      requires :content, type: String, desc: '消息中的文字内容'
+      optional :information, type: String, desc: 'json string, 自定义信息, 如目标对象信息' 
+    end
+    post :system do
+      authenticate_app!
+      msErr!('目标用户不存在或未注册', 1002) unless redis.hexists(u_list, params[:user_id])
+      send_data = {
+          session_type: 'system_message',
+          session_identifier: params[:session_identifier],
+          session_icon: params[:session_icon],
+          session_title: params[:session_title],
+          sender: {
+                    identifier: params[:sender_identifier],
+                    name: params[:sender_name],
+                    avatar: params[:sender_avatar]
+                  },
+          send_time: Time.now.to_i,
+          content_type: params[:content_type],
+          content: params[:content],
+          content_file: nil,
+          content_preview: nil, 
+          information: params[:information]
+        }
+      push_data([params[:user_id]], send_data)
       msReturn('', 'OK')
     end
   end

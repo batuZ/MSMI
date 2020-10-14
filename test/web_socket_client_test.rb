@@ -29,8 +29,8 @@ user = {
 # } 
 
 EM.run do
-  ws = WebSocket::EventMachine::Client.connect(:uri => 'wss://www.mapplay.cn:3334/cable',headers: {'msmi-token' =>  user[:token]})
-  # ws = WebSocket::EventMachine::Client.connect(:uri => 'ws://127.0.0.1:3000/cable',headers: {msmi_token:  sf_token})
+  # ws = WebSocket::EventMachine::Client.connect(:uri => 'wss://www.mapplay.cn:3334/cable',headers: {'msmi-token' =>  user[:token]})
+  ws = WebSocket::EventMachine::Client.connect(:uri => 'ws://127.0.0.1:3000/cable',headers: {'msmi-token' =>  user[:token]})
   
   ws.onopen do
     ws.send({ command: 'subscribe', identifier: {channel: 'OnlineChannel'}.to_json }.to_json)
