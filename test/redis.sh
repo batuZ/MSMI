@@ -1,4 +1,4 @@
-# https://www.rubydoc.info/github/redis/redis-rb/master/Redis/Distributed#lpush-instance_method
+# https://github.com/redis/redis-rb/blob/087a11b585978cd3970d22d066b7d8ccd89a40f6/lib/redis.rb
 # 中文详解： https://www.cnblogs.com/funyoung/p/10730525.html
 
 ------------- 2.1 String ------------- 
