@@ -1,13 +1,13 @@
 # ============================= benchmark  性能测试  =============================
 # https://ruby-doc.org//stdlib-2.2.2/libdoc/benchmark/rdoc/Benchmark.html
 # https://www.qiuzhi99.com/articles/ruby-xing-neng-ce-shi
-require 'benchmark'
-require 'benchmark/ips'
-include Benchmark
+# require 'benchmark'
+# require 'benchmark/ips'
+# include Benchmark
 
-hs = {'a' => 123}
-pp hs[:a]
-pp hs['a']
+# hs = {'a' => 123}
+# pp hs[:a]
+# pp hs['a']
 
 # pp aa.downcase.delete
 # n = 5000000
