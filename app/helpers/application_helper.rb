@@ -5,6 +5,7 @@ module ApplicationHelper
     begin
       msErr!('app_id或secret_key不合法', 1003) unless app?(params[:app_id])
       msErr!('app_id或secret_key不合法', 1003) unless app_info(params[:app_id])['secret_key'].eql?(params[:secret_key])
+      @current_user = {'app_id' => params[:app_id]}
     rescue StandardError
     end
   end
