@@ -73,6 +73,24 @@ class API < Grape::API
     msReturn token
   end
 
+  desc '客户端上传文件成功后，oss触发的回调将按要求调用此接口，用户不可以直接调用', hidden: true
+  # params do
+  #   requires :sendier_id
+  #   requires :session_id
+  # end
+  post :callback do
+    # todo：
+    # 验证回调是由oss发出的
+    # 找到hold，调用push_data
+    # 清理hold
+
+    # todo:callback的另一个思路 
+    # c向s要sts --成功--> update_file --成功--> c再次调用send_data接口
+    #                              |                ^
+    #                              |---失败--> c尝试断点续传
+    pp params
+  end
+
 # ========================= USER =========================
   desc '用户设置：加好友条件,和其它setting',
        tags: ['USERS'], summary: '用户设置'

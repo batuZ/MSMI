@@ -54,7 +54,7 @@ namespace :redis do
 			res = ha
 
 		elsif  redis.type(key).eql?'zset'
-			res = redis.zrange(key, 0, -1)
+			res = redis.zrange(key, 0, -1, :with_scores => true)
 
 		elsif  redis.type(key).eql?'string'
 			res = redis.get key

@@ -39,6 +39,69 @@ class MessageAPI < Grape::API
       end
     end
 
+
+
+    desc '单聊,附件直传,需要严格依据返回参数上传附件', summary: '单聊,附件直传', tags: ['MESSAGES']
+    params do
+      requires :user_id, type: String, desc: '目标id'
+      requires :content_type, type: String, desc: '消息类型'
+      optional :content, type: String, desc: '消息中的文字内容'
+      optional :file_name, type: String, desc: '要上传的文件名，包含后缀'
+      optional :information, type: String , desc: 'json string, 自定义信息, 如目标对象信息' 
+      at_least_one_of :content, :file_name, desc: 'content参数和file_name至少有其一'
+    end
+    post :single_sts do
+      authenticate_user!
+      msErr!('目标用户不存在或未注册', 1003) unless redis.hexists(u_list, params[:user_id])
+      if s_list(params[:user_id]).include?(current_user['identifier'])
+        msErr!('你已被此用户屏蔽', 1005)
+      else 
+        # 组织数据
+        send_data = {
+          session_type: 'single_chat',
+          session_identifier: current_user['identifier'],
+          session_icon: current_user['avatar'],
+          session_title: current_user['name'],
+          sender: sender,
+          send_time: Time.now.to_i,
+          content_type: params[:content_type],
+          content: params[:content],
+          content_file: nil,
+          content_preview: nil, 
+          information: params[:information]
+        }
+
+        if(params[:content_type].eql?'text' && params[:content].present?)   # 内容为纯文字时直接发给接收者
+           push_data([params[:user_id]], send_data)
+        elsif(params[:file_name].present?) # 内容为附件时把sts和callback发给接收者
+          # 重命名，保留后缀
+          a = current_user['identifier']  # => 发送者
+          b = params[:user_id]            # => 接收者
+          c = send_data[:send_time]       # => 发起时间
+          d = UUIDTools::UUID.random_create.to_s.split('-')[0] # => 随机串
+          file_name = "#{a}-#{b}-#{c}-#{d}#{File.extname(params[:file_name])}"
+          original, preview = ["/msmi_file/original/#{file_name}", "/msmi_file/preview/#{file_name}"]
+          send_data = {
+            session_type: 'single_chat',
+            session_identifier: current_user['identifier'],
+            session_icon: current_user['avatar'],
+            session_title: current_user['name'],
+            sender: sender,
+            send_time: Time.now.to_i,
+            content_type: params[:content_type],
+            content: params[:content],
+            content_file: original,
+            content_preview: preview, 
+            information: params[:information]
+            }
+          res = sts_token(file_name)
+          msErr!('sts_token获取失败', 1007) if res.nil?
+          msErr!('hold_data失败', 1008) if hold_data([params[:user_id]], send_data).nil?
+        end
+        msReturn(res||{})
+      end
+    end
+
     desc '发送消息到群，群聊', tags: ['MESSAGES'], summary: '群聊'
     params do
       requires :group_id, type: String, desc: '目标群id'

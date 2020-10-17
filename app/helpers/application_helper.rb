@@ -91,13 +91,23 @@ module ApplicationHelper
       is_pushed = ActionCable.server.broadcast(send_to, send_data)
       if is_pushed == 0
         hold = {send_to: send_to, send_data: send_data}
-        redis.setex("#{send_to}:messages:#{Time.now.to_i}", 1.hour.to_i, hold.to_json)
+        redis.setex("#{send_to}:messages:#{Time.now.to_i}", 1.month.to_i, hold.to_json)
       end
       res += is_pushed
     end
     res
   end
 
+  # client直传前，server需要组织好data并挂起，等待callback触发send动作
+  def hold_data tagets_arr, send_data
+    key = "#{u_hold_key}:#{Time.now.to_i}"
+    redis.pipelined do
+      redis.hset(key, :send_to, tagets_arr.to_json) rescue return nil
+      redis.hset(key, :send_data, send_data.to_json) rescue return nil
+      redis.expire(key, 900) rescue return nil
+    end 
+    return key
+  end
   #======================= groups =================================
 
   # 获取群信息
@@ -157,12 +167,17 @@ module ApplicationHelper
     "#{u_key(u_id)}:setting"
   end
 
+  # 用户挂起data的key
+  def u_hold_key u_id = nil
+    "#{u_key(u_id)}:hold"
+  end
+
   # 发送者的信息
   def sender
     {
-        identifier: current_user['identifier'],
-        name: current_user['name'],
-        avatar: current_user['avatar']
+      identifier: current_user['identifier'],
+      name: current_user['name'],
+      avatar: current_user['avatar']
     }
   end
 
@@ -214,7 +229,7 @@ module ApplicationHelper
         ["#{current_user['app_id']}/#{file_name}", "#{current_user['app_id']}/#{file_name}"]
       else
         al_bucket.put_object(File.basename(tempfile_path), :file => tempfile_path)
-        ["msmi_file/original/#{file_name}", "msmi_file/preview/#{file_name}"]
+        ["/msmi_file/original/#{file_name}", "/msmi_file/preview/#{file_name}"]
       end
     end
   end
@@ -225,6 +240,26 @@ module ApplicationHelper
         access_key_id: save_tag['access_key_id'],
         access_key_secret: save_tag['access_key_secret'])
     @al_client.get_bucket(save_tag['bucket'])
+  end
+
+  # 客户端直传时需要返回的临时身份验证和回调参数
+  def sts_token file_name
+    sts = Aliyun::STS::Client.new(access_key_id: save_tag['access_key_id'], access_key_secret: save_tag['access_key_secret'])
+    role = "acs:ram::#{Rails.application.credentials.config[:oss][:user]}:role/#{Rails.application.credentials.config[:oss][:role]}"
+    policy = Aliyun::STS::Policy.new
+    policy.allow(['oss:PutObject'], ["acs:oss:*:*:temp-sts/#{file_name}"]) 
+    (token=sts.assume_role(role,'sss', policy, 60*60)) rescue return nil
+    {
+      access_key_id:      token.access_key_id,
+      access_key_secret:  token.access_key_secret,
+      expiration:         token.expiration,
+      security_token:     token.security_token,
+      session_name:       token.session_name,
+      endpoint:           save_tag['endpoint'],
+      bucket:             save_tag['bucket'],
+      file_name:          file_name,
+      callback_api:       '/callback'
+    }
   end
 
   def save_tag
@@ -252,6 +287,13 @@ module ApplicationHelper
     bucket
   end
 
+  #======================= others =================================
+  # 查看方法运行时间
+  def bench
+    start = Time.now 
+    yield 
+    puts ">>>>>> #{Time.now-start} seconds" 
+  end
 end
 
 
