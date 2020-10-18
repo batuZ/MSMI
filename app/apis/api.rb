@@ -7,7 +7,7 @@ class API < Grape::API
 # 应用的唯一标识，不能重复，最小长度为两个字符
 # 功能类似namespace
 # 未注册不能创建usertoken
-  desc '创建app', tags: ['APP'], summary: '由管理员在MSMI后台控制，管理应用级属性'
+  desc '创建app', tags: ['APP'], summary: '由管理员在MSMI后台控制，管理应用级属性', hidden: true
   params do
     requires :app, type: String, desc: :app名称或标识字符串，全局唯一
     optional :ownner, type: String, desc: 'app管理员'
@@ -30,7 +30,8 @@ class API < Grape::API
     msReturn(app_name: params[:app], secret_key: sk)
   end
 
-  desc '下载文件，拼接方式: [https://www.example.com/msmi_file/(固定部份)] + [preview/xxxx.jpg(消息中的部份)]', tags: ['APP'], summary: '使用云存储时，下载聊天附件的统一接口'
+  desc '下载文件，拼接方式: [https://www.example.com/msmi_file/(固定部份)] + [preview/xxxx.jpg(消息中的部份)]', 
+  tags: ['APP'], summary: '使用云存储时，下载聊天附件的统一接口', hidden: true
   route :get, '/msmi_file/*/*' do
     unless save_tag["service"].eql?("Disk")
       tag_type = params["splat"].first # => 当用云时：original or preview | 当用本地存时： app_id
