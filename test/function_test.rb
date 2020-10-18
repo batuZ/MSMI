@@ -1,3 +1,32 @@
+# ============================= oss sts callback  =============================
+# require 'aliyun/sts'
+# require 'aliyun/oss'
+# require 'active_support'
+
+# # ----------- server ---------------
+
+# sts = Aliyun::STS::Client.new(
+#   access_key_id: 'LTAI**********Sd6a',
+#   access_key_secret: 'xHY*****************CILw')
+# policy = Aliyun::STS::Policy.new
+# policy.allow(['oss:PutObject'], ['acs:oss:*:*:msmi-bucket/tagname6.aaa'])
+# role = 'acs:ram::1*****94025***:role/AliyunOSSToken*******Role'
+# (token=sts.assume_role(role,'sss', policy, 60*60))
+
+# # ----------- client ---------------
+# return if token.nil?
+# client = Aliyun::OSS::Client.new(
+#   endpoint: 'oss-cn-beijing.aliyuncs.com',
+#   access_key_id: token.access_key_id,
+#   access_key_secret: token.access_key_secret,
+#   sts_token: token.security_token)
+# bucket = client.get_bucket('msmi-bucket')
+callback = Aliyun::OSS::Callback.new(
+  url: 'https://www.mapplay.cn:1234/oss_callback',
+  body: 'hold=hold_key',
+)
+pp bucket.put_object('tagname6.aaa', :file => '/Users/Batu/Downloads/example.jpg', callback: callback)
+
 # ============================= benchmark  性能测试  =============================
 # https://ruby-doc.org//stdlib-2.2.2/libdoc/benchmark/rdoc/Benchmark.html
 # https://www.qiuzhi99.com/articles/ruby-xing-neng-ce-shi
@@ -52,7 +81,9 @@
 
 
 # require "redis"
+# require 'json'
 
+# redis = Redis.new(driver: :hiredis)
 
 # def bench(descr) 
 # 	start = Time.now 

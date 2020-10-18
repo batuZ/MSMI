@@ -102,6 +102,7 @@ module ApplicationHelper
   def hold_data tagets_arr, send_data
     key = "#{u_hold_key}:#{Time.now.to_i}"
     redis.pipelined do
+      redis.hset(key, :app_id, current_user['app_id']) rescue return nil
       redis.hset(key, :send_to, tagets_arr.to_json) rescue return nil
       redis.hset(key, :send_data, send_data.to_json) rescue return nil
       redis.expire(key, 900) rescue return nil
@@ -243,22 +244,21 @@ module ApplicationHelper
   end
 
   # 客户端直传时需要返回的临时身份验证和回调参数
-  def sts_token file_name
+  def sts_token file_name, hold_key
     sts = Aliyun::STS::Client.new(access_key_id: save_tag['access_key_id'], access_key_secret: save_tag['access_key_secret'])
     role = "acs:ram::#{Rails.application.credentials.config[:oss][:user]}:role/#{Rails.application.credentials.config[:oss][:role]}"
     policy = Aliyun::STS::Policy.new
-    policy.allow(['oss:PutObject'], ["acs:oss:*:*:temp-sts/#{file_name}"]) 
+    policy.allow(['oss:PutObject'], ["acs:oss:*:*:#{save_tag['bucket']}/#{file_name}"]) 
     (token=sts.assume_role(role,'sss', policy, 60*60)) rescue return nil
     {
       access_key_id:      token.access_key_id,
       access_key_secret:  token.access_key_secret,
-      expiration:         token.expiration,
       security_token:     token.security_token,
-      session_name:       token.session_name,
       endpoint:           save_tag['endpoint'],
       bucket:             save_tag['bucket'],
       file_name:          file_name,
-      callback_api:       '/callback'
+      callback_api:       '/callback',
+      callback_body:      {hold_key: hold_key}.to_json
     }
   end
 

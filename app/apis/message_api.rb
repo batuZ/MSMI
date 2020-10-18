@@ -39,8 +39,6 @@ class MessageAPI < Grape::API
       end
     end
 
-
-
     desc '单聊,附件直传,需要严格依据返回参数上传附件', summary: '单聊,附件直传', tags: ['MESSAGES']
     params do
       requires :user_id, type: String, desc: '目标id'
@@ -94,9 +92,10 @@ class MessageAPI < Grape::API
             content_preview: preview, 
             information: params[:information]
             }
-          res = sts_token(file_name)
+          hold_key = hold_data([params[:user_id]], send_data)
+          msErr!('hold_data失败', 1008) if hold_key.nil?
+          res = sts_token(file_name, hold_key)
           msErr!('sts_token获取失败', 1007) if res.nil?
-          msErr!('hold_data失败', 1008) if hold_data([params[:user_id]], send_data).nil?
         end
         msReturn(res||{})
       end
