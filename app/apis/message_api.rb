@@ -54,6 +54,7 @@ class MessageAPI < Grape::API
       if s_list(params[:user_id]).include?(current_user['identifier'])
         msErr!('你已被此用户屏蔽', 1005)
       else 
+        
         # 组织数据
         send_data = {
           session_type: 'single_chat',
@@ -71,6 +72,7 @@ class MessageAPI < Grape::API
 
         if(params[:content_type].eql?'text' && params[:content].present?)   # 内容为纯文字时直接发给接收者
            push_data([params[:user_id]], send_data)
+
         elsif(params[:file_name].present?) # 内容为附件时把sts和callback发给接收者
           # 重命名，保留后缀
           a = current_user['identifier']  # => 发送者
@@ -78,20 +80,8 @@ class MessageAPI < Grape::API
           c = send_data[:send_time]       # => 发起时间
           d = UUIDTools::UUID.random_create.to_s.split('-')[0] # => 随机串
           file_name = "#{a}-#{b}-#{c}-#{d}#{File.extname(params[:file_name])}"
-          original, preview = ["/msmi_file/original/#{file_name}", "/msmi_file/preview/#{file_name}"]
-          send_data = {
-            session_type: 'single_chat',
-            session_identifier: current_user['identifier'],
-            session_icon: current_user['avatar'],
-            session_title: current_user['name'],
-            sender: sender,
-            send_time: Time.now.to_i,
-            content_type: params[:content_type],
-            content: params[:content],
-            content_file: original,
-            content_preview: preview, 
-            information: params[:information]
-            }
+          send_data[:content_file] = "/msmi_file/original/#{file_name}"
+          send_data[:content_preview] = "/msmi_file/preview/#{file_name}"
           hold_key = hold_data([params[:user_id]], send_data)
           msErr!('hold_data失败', 1008) if hold_key.nil?
           res = sts_token(file_name, hold_key)
