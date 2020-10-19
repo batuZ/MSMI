@@ -42,7 +42,7 @@ class API < Grape::API
       if tag_type.eql?('preview') && ['jpg', 'jpeg', 'png'].include?(tag_format.downcase)
         url += "?x-oss-process=image/auto-orient,1/resize,m_lfit,w_400,h_400,limit_0/quality,q_70/format,jpg"
       elsif tag_type.eql?('preview') && tag_format.eql?('mp4')
-        url += "?x-oss-process=video/snapshot,t_1000,f_jpg,w_400,h_0,m_fast"
+        url += "?x-oss-process=video/snapshot,t_1000,f_jpg,w_400,h_0,m_fast,ar_auto"
       else
         # audio? file?
       end
@@ -87,7 +87,7 @@ class API < Grape::API
       @current_user = {'app_id' => hold['app_id']}
       push_data(send_to, send_data)
     end
-    return redis.del(params[:hold_key])
+    msReturn redis.del(params[:hold_key])
   end
 
 # ========================= USER =========================

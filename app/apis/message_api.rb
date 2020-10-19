@@ -54,7 +54,7 @@ class MessageAPI < Grape::API
       if s_list(params[:user_id]).include?(current_user['identifier'])
         msErr!('你已被此用户屏蔽', 1005)
       else 
-        
+
         # 组织数据
         send_data = {
           session_type: 'single_chat',
@@ -70,7 +70,7 @@ class MessageAPI < Grape::API
           information: params[:information]
         }
 
-        if(params[:content_type].eql?'text' && params[:content].present?)   # 内容为纯文字时直接发给接收者
+        if(params[:content_type].eql?('text') && params[:content].present?)   # 内容为纯文字时直接发给接收者
            push_data([params[:user_id]], send_data)
 
         elsif(params[:file_name].present?) # 内容为附件时把sts和callback发给接收者
