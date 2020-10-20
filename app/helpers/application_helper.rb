@@ -246,7 +246,7 @@ module ApplicationHelper
   # 客户端直传时需要返回的临时身份验证和回调参数
   def sts_token file_name, hold_key
     sts = Aliyun::STS::Client.new(access_key_id: save_tag['access_key_id'], access_key_secret: save_tag['access_key_secret'])
-    role = "acs:ram::#{Rails.application.credentials.config[:oss][:user]}:role/#{Rails.application.credentials.config[:oss][:role]}"
+    role = "acs:ram::#{Rails.application.credentials.config[:oss1][:user]}:role/#{Rails.application.credentials.config[:oss1][:role]}"
     policy = Aliyun::STS::Policy.new
     policy.allow(['oss:PutObject'], ["acs:oss:*:*:#{save_tag['bucket']}/#{file_name}"]) 
     (token=sts.assume_role(role,'sss', policy, 60*60)) rescue return nil
