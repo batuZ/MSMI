@@ -401,6 +401,7 @@ class API < Grape::API
   end
 
   mount MessageAPI
+  
   desc '处理未知请求', hidden: true
   route :any, '*path' do
     putf ">> #{params['path']} 没有找到接口 <<"
