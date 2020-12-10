@@ -165,7 +165,7 @@ class MessageAPI < Grape::API
                     name: params[:sender_name],
                     avatar: params[:sender_avatar]
                   },
-          action: params[:action]
+          action: params[:action],
           send_time: params[:time],
           content_type: params[:content_type],
           content: params[:content],
