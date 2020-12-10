@@ -91,8 +91,7 @@ class API < Grape::API
   end
 
 # ========================= USER =========================
-  desc '用户设置：加好友条件,和其它setting',
-       tags: ['USERS'], summary: '用户设置'
+  desc '用户设置：加好友条件,和其它setting', tags: ['USERS'], summary: '用户设置'
   params do
     optional :approve, type: Integer, desc: '加好友条件：0-不需要审批，直接添加（默认），1-需要审批'
     optional :allow_notification, type: Boolean, desc: '接收通知'
@@ -100,15 +99,17 @@ class API < Grape::API
   post :user_setting do
     authenticate_user!
     redis.hset(u_setting_key, params)
-    msReturn redis.hgetall(u_setting_key)
+    msReturn approve: redis.hget(u_setting_key, 'approve'),
+    allow_notification: redis.hget(u_setting_key, 'allow_notification')
   end
 
-  desc '获取用户设置',
-       tags: ['USERS'], summary: '获取用户设置'
+  desc '获取用户设置', tags: ['USERS'], summary: '获取用户设置'
   get :user_setting do
     authenticate_user!
-    msReturn redis.hgetall(u_setting_key)
+    msReturn approve: redis.hget(u_setting_key, 'approve'),
+    allow_notification: redis.hget(u_setting_key, 'allow_notification')
   end
+
 # desc '是否在线', tags: ['USERS']
 # params do
 # 	requires :tag_id,	type: String,	desc: '目标id'
@@ -144,8 +145,9 @@ class API < Grape::API
           session_icon: current_user['avatar'],
           session_title: '加好友审请',
           sender: sender,
+          action: 'friends_judgment',
           send_time: Time.now.to_i,
-          content_type: 'friends_judgment',
+          content_type: 'text',
           content: params[:remark] || "#{user['name']}申请加你为好友。"
       }
       push_data([params[:user_id]], send_data)
@@ -171,8 +173,9 @@ class API < Grape::API
           session_icon: current_user['avatar'],
           session_title: '提醒',
           sender: sender,
+          action: 'friends_prompt',
           send_time: Time.now.to_i,
-          content_type: 'friends_prompt',
+          content_type: 'text',
           content: "#{current_user['name']}通过了你的审请，你们现在是好友了。"
       }
       push_data([params[:user_id]], send_data)
