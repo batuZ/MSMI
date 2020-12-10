@@ -95,13 +95,20 @@ class API < Grape::API
        tags: ['USERS'], summary: '用户设置'
   params do
     optional :approve, type: Integer, desc: '加好友条件：0-不需要审批，直接添加（默认），1-需要审批'
+    optional :allow_notification, type: Boolean, desc: '接收通知'
   end
   post :user_setting do
     authenticate_user!
     redis.hset(u_setting_key, params)
-    msReturn
+    msReturn redis.hgetall(u_setting_key)
   end
 
+  desc '获取用户设置',
+       tags: ['USERS'], summary: '获取用户设置'
+  get :user_setting do
+    authenticate_user!
+    msReturn redis.hgetall(u_setting_key)
+  end
 # desc '是否在线', tags: ['USERS']
 # params do
 # 	requires :tag_id,	type: String,	desc: '目标id'
@@ -401,7 +408,7 @@ class API < Grape::API
   end
 
   mount MessageAPI
-  
+
   desc '处理未知请求', hidden: true
   route :any, '*path' do
     putf ">> #{params['path']} 没有找到接口 <<"

@@ -132,6 +132,8 @@ class MessageAPI < Grape::API
       requires :app_id, type: String, desc: '应用标识'
       requires :secret_key, type: String, desc: '应用密钥'
 
+      requires :notifiction_type, type: String, desc: '通知类型：应用(app_notifiction)、单聊(single_chat)、 群聊(group_chat)'
+
       requires :session_identifier, type: String, desc: '会话的唯一标识'
       optional :session_icon, type: String, desc: '会话的图标'
       optional :session_title, type: String, desc: '会话的标题'
@@ -140,25 +142,30 @@ class MessageAPI < Grape::API
       requires :sender_name, type: String, desc: '发起者的名字'
       requires :sender_avatar, type: String, desc: '发起者的头像'
 
+      requires :time, type: Integer, desc: '发起动作的10位时间戳'
+
       requires :user_id, type: String, desc: '目标id'
+
       requires :content_type, type: String, desc: '消息类型'
       requires :content, type: String, desc: '消息中的文字内容'
+
       optional :information, type: String, desc: 'json string, 自定义信息, 如目标对象信息' 
     end
     post :system do
       authenticate_app!
       msErr!('目标用户不存在或未注册', 1002) unless redis.hexists(u_list, params[:user_id])
+      msErr!('目标用户拒绝接收此类通知', 1003) unless redis.hget(u_setting_key(params[:user_id]), 'allow_notification').try(:to_bool) || true # 未设置此项，默认为true
       send_data = {
-          session_type: 'system_message',
+          session_type: params[:notifiction_type],
           session_identifier: params[:session_identifier],
-          session_icon: params[:session_icon],
-          session_title: params[:session_title],
+          session_icon: params[:session_icon] || '',
+          session_title: params[:session_title] || '',
           sender: {
                     identifier: params[:sender_identifier],
                     name: params[:sender_name],
                     avatar: params[:sender_avatar]
                   },
-          send_time: Time.now.to_i,
+          send_time: params[:time],
           content_type: params[:content_type],
           content: params[:content],
           content_file: nil,
