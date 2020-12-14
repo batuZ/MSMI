@@ -5,12 +5,18 @@ require 'pp'
 require 'json'
 
 user = {
-  user_id: 'Daogelasi_JianGuo',
-  user_name: '道格拉斯·建国',
-  avatar_url: 'https://images.12306.com/avatar/img_3617.jpg',
-  app_id: 'mapplay',
-  token: 'eyJhbGciOiJIUzI1NiJ9.eyJpZGVudGlmaWVyIjoiRGFvZ2VsYXNpX0ppYW5HdW8iLCJuYW1lIjoi6YGT5qC85ouJ5pavwrflu7rlm70iLCJhdmF0YXIiOiJodHRwczovL2ltYWdlcy4xMjMwNi5jb20vYXZhdGFyL2ltZ18zNjE3LmpwZyIsImFwcF9pZCI6Im1hcHBsYXkifQ.3jgZIKdd6Xst-F7u0ZAN0Wx_i9MzDywYbSJU9dCSiaw'
+  token: 'eyJhbGciOiJIUzI1NiJ9.eyJpZGVudGlmaWVyIjoiRHpsRkVRdFJidG96SHIiLCJuYW1lIjoi5be05Zu-IiwiYXZhdGFyIjoiL2FwaS9tc19maWxlLzVTUUVwNmFUMUJNS3hucDZtc0J2ZkFLZS5qcGciLCJhcHBfaWQiOiJkb25ndGluZyJ9.F9aFV_lx1DTRjqldn3pHJDDdUj_d6RaDXVobjgtHhb0',
+  user_name: 'BT',
 }
+
+
+# user = {
+#   user_id: 'Daogelasi_JianGuo',
+#   user_name: '道格拉斯·建国',
+#   avatar_url: 'https://images.12306.com/avatar/img_3617.jpg',
+#   app_id: 'mapplay',
+#   token: 'eyJhbGciOiJIUzI1NiJ9.eyJpZGVudGlmaWVyIjoiRGFvZ2VsYXNpX0ppYW5HdW8iLCJuYW1lIjoi6YGT5qC85ouJ5pavwrflu7rlm70iLCJhdmF0YXIiOiJodHRwczovL2ltYWdlcy4xMjMwNi5jb20vYXZhdGFyL2ltZ18zNjE3LmpwZyIsImFwcF9pZCI6Im1hcHBsYXkifQ.3jgZIKdd6Xst-F7u0ZAN0Wx_i9MzDywYbSJU9dCSiaw'
+# }
 
 # user = {
 #   user_id: 'Nigulash_ShuFen',
@@ -29,8 +35,8 @@ user = {
 # } 
 
 EM.run do
-  # ws = WebSocket::EventMachine::Client.connect(:uri => 'wss://www.mapplay.cn:3334/cable',headers: {'msmi-token' =>  user[:token]})
-  ws = WebSocket::EventMachine::Client.connect(:uri => 'ws://127.0.0.1:3000/cable',headers: {'msmi-token' =>  user[:token]})
+  ws = WebSocket::EventMachine::Client.connect(:uri => 'wss://www.mapplay.cn:3334/cable',headers: {'msmi-token' =>  user[:token]})
+  # ws = WebSocket::EventMachine::Client.connect(:uri => 'ws://127.0.0.1:3000/cable',headers: {'msmi-token' =>  user[:token]})
   
   ws.onopen do
     ws.send({ command: 'subscribe', identifier: {channel: 'OnlineChannel'}.to_json }.to_json)
@@ -39,7 +45,8 @@ EM.run do
   ws.onmessage do |msg, type|
     json = JSON.parse(msg)
     if json["type"].nil?
-      puts "#{json['message']['sender']['name']}: #{json['message']['content']}"
+      # puts "#{json['message']['sender']['name']}: #{json['message']['content']}"
+      pp json
     end
   end
 

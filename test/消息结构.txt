@@ -22,9 +22,9 @@ system_message	group:id 						Group 					  用户申请加入你的群					m_id,
 
 								Comment							Comment						被评论或回复							m_id, m_img
 								Liked								Liked							被点赞										m_id, m_img
-								Followed						Followed					被关注										
-								Recharge						Recharge					充值成功									m_id
-								Cashout							Cashout						提现已完成								m_id
-								Support							Support						被打赏										m_id, m_img
+								Followed						Followed					被关注										m_id, m_img
+								Recharge						Recharge					充值成功									
+								Cashout							Cashout						提现已完成								
+								Support							Support						被打赏										
 								Upgrade							Upgrade						升级通知									
 								...									...								...
