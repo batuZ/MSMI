@@ -1,0 +1,30 @@
+session_type		session_identifier	action 						说明											information
+
+single_chat			user:id							Message						聊天内容									
+																		Notification			聊天通知									m_opt: Joined, ...
+																		Command 					聊天页面命令 							m_opt:, ...
+
+
+group_chat			group:id						Message						群聊内容 									
+																		Notification			群聊通知           				m_opt: Joined, Leaved, Moveout, ...
+																		Command 					群聊页面命令							m_opt:, ...
+																		
+system_message	group:id 						Group 					  用户申请加入你的群					m_id, m_img, m_name, m_opt: JoinRequest
+
+								circle:id 					Circle 	          用户申请加入你的圈子   			m_id, m_img, m_name, m_opt: JoinRequest
+																											你加入圈子申请被圈子通过   	m_id, m_img, m_name, m_opt: Passed
+																											你加入群的申请被群拒绝 			m_id, m_img, m_name, m_opt: Refused
+																											有用户加入了你的圈子				m_id, m_img, m_name, m_opt: Joined
+																											有用户离开了你的圈子				m_id, m_img, m_name, m_opt: Leaved
+																											你被圈子移除							m_id, m_img, m_name, m_opt: Moveout
+
+								user:id 						Friend 						用户申请加入你为好友   			m_opt: JoinRequest
+
+								Comment							Comment						被评论或回复							m_id, m_img
+								Liked								Liked							被点赞										m_id, m_img
+								Followed						Followed					被关注										
+								Recharge						Recharge					充值成功									m_id
+								Cashout							Cashout						提现已完成								m_id
+								Support							Support						被打赏										m_id, m_img
+								Upgrade							Upgrade						升级通知									
+								...									...								...

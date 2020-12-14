@@ -141,14 +141,15 @@ class API < Grape::API
     elsif (mark == 1)
       send_data = {
           session_type: 'system_message',
-          session_identifier: 'judgment',
+          session_identifier: current_user['identifier'],
           session_icon: current_user['avatar'],
           session_title: '加好友审请',
           sender: sender,
-          action: 'friends_judgment',
+          action: 'Friend',
           send_time: Time.now.to_i,
           content_type: 'text',
-          content: params[:remark] || "#{user['name']}申请加你为好友。"
+          content: params[:remark] || "#{user['name']}申请加你为好友。",
+          information: { m_opt: 'JoinRequest' }
       }
       push_data([params[:user_id]], send_data)
       redis.zadd(f_list_key, -1 * Time.now.to_i, params[:user_id]) #用name的ASC值排序
@@ -168,15 +169,14 @@ class API < Grape::API
     msErr!('无效的审请记录', 1005) unless un_f_list(params[:user_id]).include?(current_user['identifier'])
     if (params[:judgment])
       send_data = {
-          session_type: 'system_message',
-          session_identifier: 'prompt',
-          session_icon: current_user['avatar'],
-          session_title: '提醒',
+          session_type: 'single_chat',
+          session_identifier: current_user['identifier'],
           sender: sender,
-          action: 'friends_prompt',
+          action: 'Notification',
           send_time: Time.now.to_i,
           content_type: 'text',
-          content: "#{current_user['name']}通过了你的审请，你们现在是好友了。"
+          content: "#{current_user['name']}通过了你的审请，你们现在是好友了。",
+          information: { m_opt: 'Joined' }
       }
       push_data([params[:user_id]], send_data)
       redis.zadd(f_list_key(params[:user_id]), eval(current_user['name'].codepoints.join '+'), current_user['identifier'])
@@ -367,7 +367,7 @@ class API < Grape::API
     msReturn(members: get_members_by_group_id(params[:group_id]))
   end
 
-  desc '加入群', tags: ['MEMBERS'], summary: '加入群'
+  desc '申请加入群', tags: ['MEMBERS'], summary: '申请加入群'
   params do
     requires :group_id, type: String, desc: '目标群id'
     optional :remark, type: String, desc: '备注'
@@ -376,21 +376,31 @@ class API < Grape::API
     authenticate_user!
     group_key = g_key(params[:group_id])
     msErr!('群不存在', 1003) unless redis.hexists(g_list, group_key)
+    group = JSON.parse(redis.hget(g_list, group_key)||'{}')
+    msErr!('群不合法', 1002) if group.blank?
     msErr!('你已经在群中', 1004) unless redis.zrank(group_key, current_user['identifier']).nil?
     mark = redis.hget(g_setting_key(params[:group_id]), 'approve').to_i
     if (mark == 0)
       redis.zadd(group_key, Time.now.to_i, current_user['identifier'])
+      # TODO: 向群聊里发通知，有人进群了
       msReturn(groups: my_groups)
     elsif (mark == 1)
       send_data = {
           session_type: 'system_message',
-          session_identifier: 'judgment',
-          session_icon: sender['avatar'],
+          session_identifier: params[:group_id],
+          session_icon: group['group_icon'],
           session_title: '进群审请',
           sender: sender,
+          action: 'Group',
           send_time: Time.now.to_i,
-          content_type: 'group_judgment',
-          content: params[:remark] || "#{current_user['name']}申请加入群#{group[:name]}。"
+          content_type: 'text',
+          content: params[:remark] || "#{current_user['name']}申请加入群#{group['group_name']}。",
+          information: {
+            m_id: params[:group_id], 
+            m_img: group[:icon], 
+            m_name: group[:name], 
+            m_opt: 'JoinRequest'
+          }
       }
 
       push_data(redis.zrangebyscore(group_key, 0, 10), send_data)

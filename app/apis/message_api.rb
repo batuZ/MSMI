@@ -24,6 +24,7 @@ class MessageAPI < Grape::API
           session_icon: current_user['avatar'],
           session_title: current_user['name'],
           sender: sender,
+          action: 'Message',
           send_time: Time.now.to_i,
           content_type: params[:content_type],
           content: params[:content],
@@ -62,6 +63,7 @@ class MessageAPI < Grape::API
           session_icon: current_user['avatar'],
           session_title: current_user['name'],
           sender: sender,
+          action: 'Message',
           send_time: Time.now.to_i,
           content_type: params[:content_type],
           content: params[:content],
@@ -114,6 +116,7 @@ class MessageAPI < Grape::API
         session_icon: group['group_icon'],
         session_title: group['group_name'],
         sender: sender,
+        action: 'Message',
         send_time: Time.now.to_i,
         content_type: params[:content_type],
         content: params[:content],
@@ -127,17 +130,19 @@ class MessageAPI < Grape::API
       msReturn('', 'OK')
     end
 
+    # TODO: 群的附件直转消息
+    # post :group_sts do
+    # end
+
     desc '系统消息', tags: ['MESSAGES'], summary: '系统消息'
     params do
       requires :app_id, type: String, desc: '应用标识'
       requires :secret_key, type: String, desc: '应用密钥'
-      
       requires :session_type, type: String, desc: '会话类型：应用(app_notifiction)、单聊(single_chat)、 群聊(group_chat)'
       requires :session_identifier, type: String, desc: '会话的唯一标识'
       optional :session_icon, type: String, desc: '会话的图标'
       optional :session_title, type: String, desc: '会话的标题'
       requires :action, type: String, desc: '操作类型'
-
       requires :sender_identifier, type: String, desc: '发起者的id'
       requires :sender_name, type: String, desc: '发起者的名字'
       requires :sender_avatar, type: String, desc: '发起者的头像'
@@ -149,6 +154,8 @@ class MessageAPI < Grape::API
       requires :content_type, type: String, desc: '消息类型'
       requires :content, type: String, desc: '消息中的文字内容'
 
+      optional :content_file, type: String, desc: '消息中的图片、视频或音频文件'
+      optional :content_preview, type: String, desc: '文件预览'
       optional :information, type: String, desc: 'json string, 自定义信息, 如目标对象信息' 
     end
     post :system do
@@ -169,9 +176,9 @@ class MessageAPI < Grape::API
           send_time: params[:time],
           content_type: params[:content_type],
           content: params[:content],
-          content_file: nil,
-          content_preview: nil, 
-          information: params[:information]
+          content_file: params[:content_file] || '',
+          content_preview: params[:content_preview] || '',
+          information: params[:information] || ''
         }
       push_data([params[:user_id]], send_data)
       msReturn('', 'OK')
