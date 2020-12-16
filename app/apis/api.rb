@@ -141,7 +141,7 @@ class API < Grape::API
     elsif (mark == 1)
       send_data = {
           session_type: 'system_message',
-          session_identifier: current_user['identifier'],
+          session_identifier: 'SysNotifi',
           session_icon: current_user['avatar'],
           session_title: '加好友审请',
           sender: sender,
@@ -387,7 +387,7 @@ class API < Grape::API
     elsif (mark == 1)
       send_data = {
           session_type: 'system_message',
-          session_identifier: params[:group_id],
+          session_identifier: 'SysNotifi',
           session_icon: group['group_icon'],
           session_title: '进群审请',
           sender: sender,

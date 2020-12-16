@@ -9,22 +9,20 @@ group_chat			group:id						Message						群聊内容
 																		Notification			群聊通知           				m_opt: Joined, Leaved, Moveout, ...
 																		Command 					群聊页面命令							m_opt:, ...
 																		
-system_message	group:id 						Group 					  用户申请加入你的群					m_id, m_img, m_name, m_opt: JoinRequest
+system_message	Liked								Liked							被点赞										m_id, m_img, m_tag[Blog|Travel]
+								Comment							Comment						被评论或回复							m_id, m_img, m_tag[Blog|Travel]
+								Followed						Followed					被关注										m_id, m_img
+								Support							Support						被打赏										m_id, m_img, m_tag[Blog|Travel|User]
 
-								circle:id 					Circle 	          用户申请加入你的圈子   			m_id, m_img, m_name, m_opt: JoinRequest
+								SysNotifi						Friend 						用户申请加入你为好友   			m_opt: JoinRequest
+								SysNotifi 					Group 					  用户申请加入你的群					m_id, m_img, m_name, m_opt: JoinRequest
+								SysNotifi						Recharge					充值成功									m_id
+								SysNotifi						Cashout						提现已完成								m_id					
+								SysNotifi						Upgrade						升级通知									
+
+								Circle 							Circle 	          用户申请加入你的圈子   			m_id, m_img, m_name, m_opt: JoinRequest
 																											你加入圈子申请被圈子通过   	m_id, m_img, m_name, m_opt: Passed
 																											你加入群的申请被群拒绝 			m_id, m_img, m_name, m_opt: Refused
 																											有用户加入了你的圈子				m_id, m_img, m_name, m_opt: Joined
 																											有用户离开了你的圈子				m_id, m_img, m_name, m_opt: Leaved
 																											你被圈子移除							m_id, m_img, m_name, m_opt: Moveout
-
-								user:id 						Friend 						用户申请加入你为好友   			m_opt: JoinRequest
-
-								Comment							Comment						被评论或回复							m_id, m_img
-								Liked								Liked							被点赞										m_id, m_img
-								Followed						Followed					被关注										m_id, m_img
-								Recharge						Recharge					充值成功									
-								Cashout							Cashout						提现已完成								
-								Support							Support						被打赏										
-								Upgrade							Upgrade						升级通知									
-								...									...								...
