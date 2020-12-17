@@ -67,6 +67,9 @@ gem 'activestorage-aliyun'
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development
 
+# for apple notification
+gem 'net-http2'
+
 # 在centOS中rails需要Javascript runtime支持数据库操作
 install_if -> { RUBY_PLATFORM =~ /linux/ } do
   gem 'therubyracer',  platforms: :ruby 

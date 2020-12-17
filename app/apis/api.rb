@@ -63,6 +63,8 @@ class API < Grape::API
     requires :identifier, type: String, desc: '用户id,应用内唯一'
     requires :name, type: String, desc: '用户名称'
     requires :avatar, type: String, desc: '用户头像url'
+    optional :device_token, type: String, desc: '设备token,用于离线通知'
+    optional :os_type, type: Integer, desc: '设备系统类型，1：ios, 2:android'
   end
   post :token do
     authenticate_app!
