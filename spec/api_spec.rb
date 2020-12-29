@@ -78,7 +78,9 @@ RSpec.describe 'API', type: :request do
   		secret_key: app_key,
   		identifier: 'ccc',
   		name: '工人',
-  		avatar: 'http://image/ccc.jpg'
+  		avatar: 'http://image/ccc.jpg',
+      device_token: '1dbb681345249d2c7e1c74d8321fcda4f5d2fe694d7cd6255514ff3381ddb0b7',
+      os_type: 1
   	}
   	expect(_code).to be == 1000
     # ___show _content

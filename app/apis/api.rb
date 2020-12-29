@@ -68,10 +68,16 @@ class API < Grape::API
   end
   post :token do
     authenticate_app!
-    # 用params创建新的token，不需要包含secret_key
-    params.delete(:secret_key)
-    token = create_token(params)
+    # 用params创建新的token，要包含app_id, identifier, name, avatar
+    for_token = {
+      app_id:     params[:app_id],
+      identifier: params[:identifier],
+      name:       params[:name],
+      avatar:     params[:avatar]
+    }
+    token = create_token(for_token)
     # 创建或修改用户记录
+    params.delete(:secret_key)
     redis.hset "#{params.delete(:app_id)}:users", params[:identifier], params.to_json
     msReturn token
   end
