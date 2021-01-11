@@ -23,7 +23,7 @@ namespace :server do
 	  	raise '启动redis-server失败' unless system 'nohup redis-server &' unless system('redis-cli ping')
 
 			puts '后台启动production服务...'
-			raise '启动production服务失败' unless system 'nohup bin/rails s -b 0.0.0.0 -e production &'
+			raise '启动production服务失败' unless system 'nohup rails s -b 0.0.0.0 -e production &'
 	    puts "production服务已经后台启动成功。"	
 
 	    File.open(e_file, "w") do |aFile|
@@ -48,7 +48,7 @@ namespace :server do
 	  	raise '启动redis-server失败' unless system 'nohup redis-server &' unless system('redis-cli ping')
 
 			puts 'development 服务开始后台启动...'
-			raise '启动development服务失败' unless system 'nohup bin/rails s -b 0.0.0.0 &'
+			raise '启动development服务失败' unless system 'nohup rails s -b 0.0.0.0 &'
 	    puts "development 服务已经后台启动成功。"	
 
 	    File.open(e_file, "w") do |aFile|
@@ -75,7 +75,7 @@ namespace :server do
 	  	raise '启动redis-server失败' unless system 'nohup redis-server &' unless system('redis-cli ping')
 
 			puts 'test 服务开始后台启动...'
-			raise 'test 服务启动失败' unless system 'nohup bin/rails s -e test &'
+			raise 'test 服务启动失败' unless system 'nohup rails s -e test &'
 	    puts "test 服务已经后台启动成功。"	
 
 	    File.open(e_file, "w") do |aFile|
