@@ -1,12 +1,28 @@
 module ApplicationHelper
   
-  # 验证app管理员身份
+  # 验证超级管理员身份
+  def authenticate_manager!
+    signature = params.delete(:signature)
+    msErr!('签名验证失败', 1003) unless wx_create_sign(params).eql?(signature) && Time.now - Time.at(params[:timestamp].to_i) < 10.minute
+  end
+
+  # 创建签名
+  def wx_create_sign params
+    param_str = ''
+    params.sort.each{ |key, value| param_str += "&#{key.to_s.strip}=#{value.to_s.strip}" if value.present? } # 去空、拼接参数
+    param_str = param_str[1..-1] + "&key=#{Rails.configuration.x.m_key}" 
+    Digest::MD5.hexdigest(param_str).upcase
+    # OpenSSL::HMAC.hexdigest('sha256', 'aaa', param_str).upcase # HMAC-SHA256
+  end
+
+  # 验证app身份
   def authenticate_app!
     begin
       msErr!('app_id或secret_key不合法', 1003) unless app?(params[:app_id])
       msErr!('app_id或secret_key不合法', 1003) unless app_info(params[:app_id])['secret_key'].eql?(params[:secret_key])
       @current_user = {'app_id' => params[:app_id]}
     rescue StandardError
+       msErr!('app_id或secret_key不合法', 1003)
     end
   end
 #======================= token =================================
@@ -28,6 +44,7 @@ module ApplicationHelper
       msErr!('用户身份未通过验证', 1007) if @current_user.nil?
       msErr!('app_id未通过验证', 1006) unless app?(@current_user['app_id'])
     rescue StandardError
+      msErr!('用户身份未通过验证', 1007)
     end
   end
 

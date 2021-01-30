@@ -20,5 +20,8 @@ module MSMI
 
     # WS:来源过滤
     config.action_cable.disable_request_forgery_protection = true
+
+    # 管理员用来签名的密钥
+    config.x.m_key = IO.readlines('./config/keys/manager_key').first
   end
 end

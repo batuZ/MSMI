@@ -7,28 +7,28 @@ class API < Grape::API
 # 应用的唯一标识，不能重复，最小长度为两个字符
 # 功能类似namespace
 # 未注册不能创建usertoken
-  desc '创建app', tags: ['APP'], summary: '由管理员在MSMI后台控制，管理应用级属性', hidden: true
-  params do
-    requires :app, type: String, desc: :app名称或标识字符串，全局唯一
-    optional :ownner, type: String, desc: 'app管理员'
-    optional :email, type: String, desc: '联系方式'
-    optional :max_users, type: Integer, desc: '人数上限'
-    optional :lease_length, type: Integer, desc: '租赁期，秒'
-  end
-  post :app do
-    msErr!('应用已存在', 1003) if app?(params[:app])
-    msErr!('应用名称不合法', 1005) if params[:app].size < 3 # => or other
-    sk = UUIDTools::UUID.timestamp_create.to_s.gsub('-', '')
-    redis.hset 'apps', params[:app], {
-        create_time: Time.now.to_i,
-        lease_length: params[:lease_length] || 1.year,
-        max_users: params[:max_users] || 100,
-        secret_key: sk,
-        ownner: params[:ownner] || '',
-        email: params[:email] || ''
-    }.to_json
-    msReturn(app_name: params[:app], secret_key: sk)
-  end
+  # desc '创建app', tags: ['APP'], summary: '由管理员在MSMI后台控制，管理应用级属性', hidden: true
+  # params do
+  #   requires :app, type: String, desc: :app名称或标识字符串，全局唯一
+  #   optional :ownner, type: String, desc: 'app管理员'
+  #   optional :email, type: String, desc: '联系方式'
+  #   optional :max_users, type: Integer, desc: '人数上限'
+  #   optional :lease_length, type: Integer, desc: '租赁期，秒'
+  # end
+  # post :app do
+  #   msErr!('应用已存在', 1003) if app?(params[:app])
+  #   msErr!('应用名称不合法', 1005) if params[:app].size < 3 # => or other
+  #   sk = UUIDTools::UUID.timestamp_create.to_s.gsub('-', '')
+  #   redis.hset 'apps', params[:app], {
+  #       create_time: Time.now.to_i,
+  #       lease_length: params[:lease_length] || 1.year,
+  #       max_users: params[:max_users] || 100,
+  #       secret_key: sk,
+  #       ownner: params[:ownner] || '',
+  #       email: params[:email] || ''
+  #   }.to_json
+  #   msReturn(app_name: params[:app], secret_key: sk)
+  # end
 
   desc '下载文件，拼接方式: [https://www.example.com/msmi_file/(固定部份)] + [preview/xxxx.jpg(消息中的部份)]', 
   tags: ['APP'], summary: '使用云存储时，下载聊天附件的统一接口', hidden: true
@@ -429,7 +429,8 @@ class API < Grape::API
   end
 
   mount MessageAPI
-
+  mount ManagerApi
+  
   desc '处理未知请求', hidden: true
   route :any, '*path' do
     putf ">> #{params['path']} 没有找到接口 <<"
@@ -448,6 +449,7 @@ class API < Grape::API
           {name: 'SHEILD', description: '屏蔽接口'},
           {name: 'APP', description: '应用接口'},
           {name: 'MESSAGES', description: '发送消息接口'},
+          {name: 'manager', description: '服务后台管理员专用，需要签名'},
       ]
   )
 end
