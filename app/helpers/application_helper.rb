@@ -3,19 +3,11 @@ module ApplicationHelper
   # 验证超级管理员身份
   def authenticate_manager!
     signature = params.delete(:signature)
-    msErr!('签名验证失败', 1003) unless wx_create_sign(params).eql?(signature) && Time.now - Time.at(params[:timestamp].to_i) < 10.minute
+    msErr!('签名验证失败', 1007) unless wx_create_sign(Rails.configuration.x.m_key, params).eql?(signature) && Time.now - Time.at(params[:timestamp].to_i) < 1.minute
   end
+  
 
-  # 创建签名
-  def wx_create_sign params
-    param_str = ''
-    params.sort.each{ |key, value| param_str += "&#{key.to_s.strip}=#{value.to_s.strip}" if value.present? } # 去空、拼接参数
-    param_str = param_str[1..-1] + "&key=#{Rails.configuration.x.m_key}" 
-    Digest::MD5.hexdigest(param_str).upcase
-    # OpenSSL::HMAC.hexdigest('sha256', 'aaa', param_str).upcase # HMAC-SHA256
-  end
-
-  # 验证app身份
+  # 验证app身份, 弃用
   def authenticate_app!
     begin
       msErr!('app_id或secret_key不合法', 1003) unless app?(params[:app_id])
@@ -25,16 +17,38 @@ module ApplicationHelper
        msErr!('app_id或secret_key不合法', 1003)
     end
   end
+
+
+  def authenticate_app1!
+    begin
+      signature = params.delete(:signature)
+      msErr!('签名验证失败', 1007) unless app?(params[:app_id]) # 应用名未找到
+      msErr!('签名验证失败', 1007) unless Time.now - Time.at(params[:timestamp].to_i) < 1.minute # 请求已过期
+      msErr!('签名验证失败', 1007) unless wx_create_sign(app_info(params[:app_id])['secret_key'], params).eql?(signature) # 签名验证失败
+    rescue StandardError
+      msErr!('签名验证失败', 1007) # 捕获异常
+    end
+  end
+
+
+  # 创建签名
+  def wx_create_sign key, params
+    param_str = ''
+    params.sort.each{ |k, v| param_str += "&#{k.to_s.strip}=#{v.to_s.strip}" if v.present? } # 去空、拼接参数
+    param_str = param_str[1..-1] + "&key=#{key}" 
+    Digest::MD5.hexdigest(param_str).upcase
+    # OpenSSL::HMAC.hexdigest('sha256', 'aaa', param_str).upcase # HMAC-SHA256
+  end
 #======================= token =================================
 
   def create_token params
-    token = JWT.encode(params, 'test_hash_key')
+    token = JWT.encode(params, Rails.secrets[:jwt])
     header('Msmi-Token', token)
     token
   end
 
   def decode_token token
-    JWT.decode(token, 'test_hash_key')
+    JWT.decode(token, Rails.secrets[:jwt])
   end
 
   # 验证token，获取用户
@@ -109,7 +123,8 @@ module ApplicationHelper
       if is_pushed == 0
         hold = {send_to: send_to, send_data: send_data}
         redis.setex("#{send_to}:messages:#{Time.now.to_i}", 1.month.to_i, hold.to_json)
-        apn(tag) if get_user(tag)['os_type'] == 1 && get_user(tag)['device_token'].present?
+        # apn(tag) if get_user(tag)['os_type'] == 1 && get_user(tag)['device_token'].present?
+        ApnJob.perform_now(current_user['app_id'], get_user(tag)['device_token'], redis.keys("#{u_key(tag)}:messages:*").count) if get_user(tag)['os_type'] == 1 && get_user(tag)['device_token'].present?
       end
       res += is_pushed
     end
@@ -129,61 +144,62 @@ module ApplicationHelper
   end
 
 #======================= apple apns =================================
-
-  def apn tag
-    pem = "config/keys/apn/#{current_user['app_id']}/product.pem"
-    apn_host = "https://api.push.apple.com:443"
-
-    unless  Rails.env.eql?('production')
-      pem = "config/keys/apn/#{current_user['app_id']}/sandbox.pem"
-      apn_host = "https://api.sandbox.push.apple.com:443"
-    end
-    
-    return(p 'no pem file') unless FileTest::exist?(pem)
-    # 把p12转成pem
-    # openssl pkcs12 -in aps_development.p12 -out ck_from_p12.pem -nodes
-    # 验证pem握手成功
-    # openssl s_client -connect api.development.push.apple.com:443 -cert "/Users/Batu/ck_from_p12.pem"
-    certificate = File.read(pem)
-    ctx         = OpenSSL::SSL::SSLContext.new
-    ctx.key     = OpenSSL::PKey::RSA.new(certificate)
-    ctx.cert    = OpenSSL::X509::Certificate.new(certificate)
-
-    # net/http2 gem
-    # https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/sending_notification_requests_to_apns?language=objc
-    client = NetHttp2::Client.new(apn_host, ssl_context: ctx)
-    # client = NetHttp2::Client.new("https://api.push.apple.com : 443", ssl_context: ctx)
-    
-    # 发送内容
-    # https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/generating_a_remote_notification?language=objc
-    request = client.prepare_request(:post, "/3/device/#{get_user(tag)['device_token']}", 
-      body: {
-        aps: { 
-          badge: redis.keys("#{u_key(tag)}:messages:*").count, 
-          alert: '收到一条新消息',
-          sound: "bingbong.aiff"
-        },
-        # ms_data: ms_data # 不承载信息，只作静态提示
-      }.to_json,
-      headers: {
-        'apns-push-type' => 'alert',
-        'apns-expiration' => 0,
-        'apns-topic' => 'cn.mapplay.Mappy',
-        'apns-priority' => 10,
-      })
   
-    # 返回错误处理
-    # https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/handling_notification_responses_from_apns?language=objc
-    request.on(:headers) { |headers| p headers }
-    request.on(:body_chunk) { |chunk|  p chunk }
-    request.on(:close) { puts "request completed!" }
+  # 在主线程执可能造成崩溃，要放到jobs里
+  # def apn tag
+  #   pem = "config/keys/apn/#{current_user['app_id']}/product.pem"
+  #   apn_host = "https://api.push.apple.com:443"
 
-    return 'test env will not do this' if Rails.env.eql?'test'
+  #   unless  Rails.env.eql?('production')
+  #     pem = "config/keys/apn/#{current_user['app_id']}/sandbox.pem"
+  #     apn_host = "https://api.sandbox.push.apple.com:443"
+  #   end
+    
+  #   return(p 'no pem file') unless FileTest::exist?(pem)
+  #   # 把p12转成pem
+  #   # openssl pkcs12 -in aps_development.p12 -out ck_from_p12.pem -nodes
+  #   # 验证pem握手成功
+  #   # openssl s_client -connect api.development.push.apple.com:443 -cert "/Users/Batu/ck_from_p12.pem"
+  #   certificate = File.read(pem)
+  #   ctx         = OpenSSL::SSL::SSLContext.new
+  #   ctx.key     = OpenSSL::PKey::RSA.new(certificate)
+  #   ctx.cert    = OpenSSL::X509::Certificate.new(certificate)
 
-    client.call_async(request)
-    client.join
-    client.close
-  end
+  #   # net/http2 gem
+  #   # https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/sending_notification_requests_to_apns?language=objc
+  #   client = NetHttp2::Client.new(apn_host, ssl_context: ctx)
+  #   # client = NetHttp2::Client.new("https://api.push.apple.com : 443", ssl_context: ctx)
+    
+  #   # 发送内容
+  #   # https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/generating_a_remote_notification?language=objc
+  #   request = client.prepare_request(:post, "/3/device/#{get_user(tag)['device_token']}", 
+  #     body: {
+  #       aps: { 
+  #         badge: redis.keys("#{u_key(tag)}:messages:*").count, 
+  #         alert: '收到一条新消息',
+  #         sound: "bingbong.aiff"
+  #       },
+  #       # ms_data: ms_data # 不承载信息，只作静态提示
+  #     }.to_json,
+  #     headers: {
+  #       'apns-push-type' => 'alert',
+  #       'apns-expiration' => 0,
+  #       'apns-topic' => 'cn.mapplay.Mappy',
+  #       'apns-priority' => 10,
+  #     })
+  
+  #   # 返回错误处理
+  #   # https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/handling_notification_responses_from_apns?language=objc
+  #   request.on(:headers) { |headers| p headers }
+  #   request.on(:body_chunk) { |chunk|  p chunk }
+  #   request.on(:close) { puts "request completed!" }
+
+  #   return 'test env will not do this' if Rails.env.eql?'test'
+
+  #   client.call_async(request)
+  #   client.join
+  #   client.close
+  # end
 
 
   #======================= groups =================================

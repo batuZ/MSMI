@@ -36,11 +36,11 @@ RSpec.describe 'API', type: :request do
 
 # ========================= APP =========================
 
-	it "创建app" do
-    post '/app', params: {app: 'aaa'}
-    expect(_code).to be == 1000
-    # ___show _content
-  end
+	# it "创建app" do
+ #    post '/app', params: {app: 'aaa'}
+ #    expect(_code).to be == 1000
+ #    # ___show _content
+ #  end
 
 # ========================= MESSAGE =========================
   it '单聊' do

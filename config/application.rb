@@ -25,3 +25,15 @@ module MSMI
     config.x.m_key = IO.readlines('./config/keys/manager_key').first
   end
 end
+
+module Rails
+  # 判断当前运行环境
+  def self.t?; Rails.env.eql?('test'); end
+  def self.p?; Rails.env.eql?('production'); end
+  def self.d?; Rails.env.eql?('development'); end
+
+  # Rails.application.credentials.config[][]代理
+  def self.secrets
+    Rails.application.credentials.config
+  end
+end

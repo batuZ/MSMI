@@ -4,31 +4,7 @@ class API < Grape::API
   helpers ApplicationHelper
 
 # ========================= APP =========================
-# 应用的唯一标识，不能重复，最小长度为两个字符
-# 功能类似namespace
-# 未注册不能创建usertoken
-  # desc '创建app', tags: ['APP'], summary: '由管理员在MSMI后台控制，管理应用级属性', hidden: true
-  # params do
-  #   requires :app, type: String, desc: :app名称或标识字符串，全局唯一
-  #   optional :ownner, type: String, desc: 'app管理员'
-  #   optional :email, type: String, desc: '联系方式'
-  #   optional :max_users, type: Integer, desc: '人数上限'
-  #   optional :lease_length, type: Integer, desc: '租赁期，秒'
-  # end
-  # post :app do
-  #   msErr!('应用已存在', 1003) if app?(params[:app])
-  #   msErr!('应用名称不合法', 1005) if params[:app].size < 3 # => or other
-  #   sk = UUIDTools::UUID.timestamp_create.to_s.gsub('-', '')
-  #   redis.hset 'apps', params[:app], {
-  #       create_time: Time.now.to_i,
-  #       lease_length: params[:lease_length] || 1.year,
-  #       max_users: params[:max_users] || 100,
-  #       secret_key: sk,
-  #       ownner: params[:ownner] || '',
-  #       email: params[:email] || ''
-  #   }.to_json
-  #   msReturn(app_name: params[:app], secret_key: sk)
-  # end
+
 
   desc '下载文件，拼接方式: [https://www.example.com/msmi_file/(固定部份)] + [preview/xxxx.jpg(消息中的部份)]', 
   tags: ['APP'], summary: '使用云存储时，下载聊天附件的统一接口', hidden: true
@@ -50,7 +26,8 @@ class API < Grape::API
     end
   end
 
-# 使用已注册的应用名 
+
+# 使用已注册的应用名 , 弃用
 # 自行维护user_id，重复的id将被覆盖
 # token包含用户名、用户头像，也就是说修改用户名需要重新创建token
 # token是发送消息时，身份验证的依据
@@ -76,11 +53,45 @@ class API < Grape::API
       avatar:     params[:avatar]
     }
     token = create_token(for_token)
+   
     # 创建或修改用户记录
     params.delete(:secret_key)
     redis.hset "#{params.delete(:app_id)}:users", params[:identifier], params.to_json
     msReturn token
   end
+
+
+  # 验证签名方式
+  desc '验证签名方式创建用户的chat_token', tags: ['APP'], summary: '验证签名方式创建用户的chat_token'
+  params do
+    requires :app_id, type: String, desc: '应用标识'
+    requires :identifier, type: String, desc: '用户id,应用内唯一'
+    requires :name, type: String, desc: '用户名称'
+    requires :avatar, type: String, desc: '用户头像url'
+    optional :device_token, type: String, desc: '设备token,用于离线通知'
+    optional :os_type, type: Integer, desc: '设备系统类型，1：ios, 2:android'
+
+    requires :random_str, type: String, desc: '随机字符串'
+    requires :timestamp, type: String, desc: '10位时间戳'
+    requires :signature, type: String, desc: '签名字符串'
+  end
+  post :token1 do
+    authenticate_app1!
+    for_token = {
+      app_id:     params[:app_id],
+      identifier: params[:identifier],
+      name:       params[:name],
+      avatar:     params[:avatar]
+    }
+    token = create_token(for_token)
+    # 创建或修改用户记录
+    params.delete(:random_str)
+    params.delete(:timestamp)
+    redis.hset "#{params.delete(:app_id)}:users", params[:identifier], params.to_json
+    msReturn token
+  end
+
+
 
   desc '客户端上传文件成功后，oss触发的回调将按要求调用此接口，用户不可以直接调用', hidden: true
   params do
@@ -441,13 +452,25 @@ class API < Grape::API
           contact_name: "Batu",
           contact_email: "304701204@qq.com"
       },
+      security_definitions: {
+        api_key: {
+          type: "apiKey",
+          name: "Msmi-Token",
+          in: "header"
+        }
+      },
+      security: [
+        {
+          api_key: []
+        }
+      ],
       tags: [
           {name: 'GROUPS', description: '群接口'},
           {name: 'MEMBERS', description: '群成员接口'},
           {name: 'FRIENDS', description: '好友接口'},
           {name: 'USERS', description: '用户接口'},
           {name: 'SHEILD', description: '屏蔽接口'},
-          {name: 'APP', description: '应用接口'},
+          {name: 'APP', description: '应用服务器接口'},
           {name: 'MESSAGES', description: '发送消息接口'},
           {name: 'manager', description: '服务后台管理员专用，需要签名'},
       ]

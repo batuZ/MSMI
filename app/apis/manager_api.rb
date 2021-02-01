@@ -99,10 +99,14 @@ class ManagerApi < Grape::API
     end
     post :manager_key do
       authenticate_manager!
-      File.open('./config/keys/manager_key', 'w') do |f|
+
+      dir = './config/keys'
+      FileUtils.mkdir_p(path) unless File.exists?(dir)
+      File.open("#{dir}/manager_key", 'w') do |f|
         f.syswrite(params[:new_key])
         Rails.configuration.x.m_key = params[:new_key]
       end
+      
       msReturn
     end
 
