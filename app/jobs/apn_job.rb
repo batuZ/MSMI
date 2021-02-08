@@ -23,12 +23,12 @@ class ApnJob < ApplicationJob
     
     # net/http2 gem
     # https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/sending_notification_requests_to_apns?language=objc
-    client = NetHttp2::Client.new(apn_host, ssl_context: ctx)
+    @@client ||= NetHttp2::Client.new(apn_host, ssl_context: ctx)
     # client = NetHttp2::Client.new("https://api.push.apple.com : 443", ssl_context: ctx)
     
     # 发送内容
     # https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/generating_a_remote_notification?language=objc
-    request = client.prepare_request(:post, "/3/device/#{device_token}", 
+    request = @@client.prepare_request(:post, "/3/device/#{device_token}", 
       body: {
         aps: { 
           badge: badge, 
@@ -52,8 +52,8 @@ class ApnJob < ApplicationJob
 
     return 'test env will not do this' if Rails.env.eql?'test'
 
-    client.call_async(request)
-    client.join
-    client.close
+    @@client.call_async(request)
+    @@client.join
+    # client.close
   end
 end

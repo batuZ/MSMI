@@ -157,6 +157,7 @@ class MessageAPI < Grape::API
       optional :content_file, type: String, desc: '消息中的图片、视频或音频文件'
       optional :content_preview, type: String, desc: '文件预览'
       optional :information, type: String, desc: 'json string, 自定义信息, 如目标对象信息' 
+      optional :is_offline_notification, type: Boolean, default: true, desc: '是否发送离线通知' 
     end
     post :system do
       authenticate_app!
@@ -180,7 +181,7 @@ class MessageAPI < Grape::API
           content_preview: params[:content_preview] || '',
           information: params[:information] || ''
         }
-      push_data([params[:user_id]], send_data)
+      push_data([params[:user_id]], send_data, params[:is_offline_notification])
       msReturn('', 'OK')
     end
   end

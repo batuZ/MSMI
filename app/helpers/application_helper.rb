@@ -115,16 +115,16 @@ module ApplicationHelper
   end
 
   # 推送数据，或离线缓存
-  def push_data tagets_arr, send_data
+  def push_data tagets_arr, send_data, offline=true
     res = 0
     tagets_arr.each do |tag|
       send_to = u_key(tag)
       is_pushed = ActionCable.server.broadcast(send_to, send_data)
-      if is_pushed == 0
+      if is_pushed == 0 && offline
         hold = {send_to: send_to, send_data: send_data}
         redis.setex("#{send_to}:messages:#{Time.now.to_i}", 1.month.to_i, hold.to_json)
         # apn(tag) if get_user(tag)['os_type'] == 1 && get_user(tag)['device_token'].present?
-        ApnJob.perform_now(current_user['app_id'], get_user(tag)['device_token'], redis.keys("#{u_key(tag)}:messages:*").count) if get_user(tag)['os_type'] == 1 && get_user(tag)['device_token'].present?
+        ApnJob.perform_later(current_user['app_id'], get_user(tag)['device_token'], redis.keys("#{u_key(tag)}:messages:*").count) if get_user(tag)['os_type'] == 1 && get_user(tag)['device_token'].present?
       end
       res += is_pushed
     end
