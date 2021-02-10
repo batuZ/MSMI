@@ -28,32 +28,46 @@ class ApnJob < ApplicationJob
     
     # 发送内容
     # https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/generating_a_remote_notification?language=objc
-    request = @@client.prepare_request(:post, "/3/device/#{device_token}", 
-      body: {
+    data_body = {
         aps: { 
           badge: badge, 
           alert: '收到一条新消息',
           sound: "bingbong.aiff"
         },
         # ms_data: ms_data # 不承载信息，只作静态提示
-      }.to_json,
-      headers: {
+      }.to_json
+
+    data_header = {
         'apns-push-type' => 'alert',
         'apns-expiration' => 0,
         'apns-topic' => 'cn.mapplay.Mappy',
         'apns-priority' => 10,
-      })
-  
-    # 返回错误处理
-    # https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/handling_notification_responses_from_apns?language=objc
-    request.on(:headers) { |headers| p headers }
-    request.on(:body_chunk) { |chunk|  p chunk }
-    request.on(:close) { puts "request completed!" }
+      }
 
     return 'test env will not do this' if Rails.env.eql?'test'
 
+    # 返回错误处理
+    # https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/handling_notification_responses_from_apns?language=objc
+    
+
+     # 异步请求
+    request = @@client.prepare_request(:post, "/3/device/#{device_token}",  body: data_body, headers: data_header)
+    # 会造成 Connection reset by peer (Errno::ECONNRESET)， 在不需要处理返回值时先注释掉
+    # request.on(:headers) { |headers| p headers }
+    # request.on(:body_chunk) { |chunk|  p chunk }
+    # request.on(:close) { puts "request completed!" }
     @@client.call_async(request)
     @@client.join
+   
+
+    #同步请求
+    # @@client.call()
+    # response = @@client.call(:post, "/3/device/#{device_token}",  body: data_body, headers: data_header)
+    # response.ok?      # => true
+    # response.status   # => '200'
+    # response.headers  # => {":status"=>"200"}
+    # response.body     # => "A body"
+   
     # client.close
   end
 end

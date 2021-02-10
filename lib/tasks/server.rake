@@ -10,7 +10,7 @@ namespace :server do
 			puts "【警告】即将后台启动【生产】环境，此环境将影响生产数据库，确定？[y] or [n]"
 			confirm1 = STDIN.gets
 			return unless confirm1.eql?"y\n"
-
+=begin 也没有静态资源啊！
 			puts '清理静态资源...'
 			raise '清理静态资源失败' unless system 'RAILS_ENV=production rails assets:clobber'
 			puts '静态资源清理完成'
@@ -18,7 +18,7 @@ namespace :server do
 			puts '编译静态资源...'
 	    raise '编译静态资源失败' unless system 'RAILS_ENV=production rails assets:precompile'
 	    puts '静态资源编译完成'
-	    
+=end
 	    puts '检查 redis-server...'
 	  	raise '启动redis-server失败' unless system 'nohup redis-server &' unless system('redis-cli ping')
 
