@@ -26,3 +26,6 @@ system_message	Liked								Liked							被点赞										m_id, m_img, m_tag[Bl
 																											有用户加入了你的圈子				m_id, m_img, m_name, m_opt: Joined
 																											有用户离开了你的圈子				m_id, m_img, m_name, m_opt: Leaved
 																											你被圈子移除							m_id, m_img, m_name, m_opt: Moveout
+
+UserRoamAttributes 	UserRoamAttributes 	changed				用户动态属性变化通知				属性详情
+UserRoamUpgrade			UserRoamUpgrade			upgrade 			用户漫游升级通知					升级详情
