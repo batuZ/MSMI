@@ -124,7 +124,7 @@ module ApplicationHelper
         hold = {send_to: send_to, send_data: send_data}
         redis.setex("#{send_to}:messages:#{Time.now.to_i}", 1.month.to_i, hold.to_json)
         # apn(tag) if get_user(tag)['os_type'] == 1 && get_user(tag)['device_token'].present?
-        ApnJob.perform_now(current_user['app_id'], get_user(tag)['device_token'], redis.keys("#{u_key(tag)}:messages:*").count) if get_user(tag)['os_type'] == 1 && get_user(tag)['device_token'].present?
+        ApnJob.perform_later(current_user['app_id'], get_user(tag)['device_token'], redis.keys("#{u_key(tag)}:messages:*").count) if get_user(tag)['os_type'] == 1 && get_user(tag)['device_token'].present?
       end
       res += is_pushed
     end
@@ -143,18 +143,29 @@ module ApplicationHelper
     return key
   end
 
+#======================= log  =================================
+
+def _log
+  @mlog = Logger.new("log/#{Rails.env}.log")
+end
+
 #======================= apple apns =================================
 
   def apn_client app_name
+    _log.info '>>>>>>>>>>>>>>>>>>>>> 3'
+
     if $apn.nil?
+    _log.info '>>>>>>>>>>>>>>>>>>>>> 4'
       if Rails.env.eql?('production')
         # 生产环境
         pem = "config/keys/apn/#{app_name}/product.pem"
         apn_host = "https://api.push.apple.com:443"
+        _log.info '>>>>>>>>>>>>>>>>>>>>> 5 production'
       else
         # 开发环境
         pem = "config/keys/apn/#{app_name}/sandbox.pem"
         apn_host = "https://api.sandbox.push.apple.com:443"
+        _log.info '>>>>>>>>>>>>>>>>>>>>> 5 development'
       end
 
       return(p 'no pem file') unless FileTest::exist?(pem)
@@ -170,11 +181,13 @@ module ApplicationHelper
       ctx         = OpenSSL::SSL::SSLContext.new
       ctx.key     = OpenSSL::PKey::RSA.new(certificate)
       ctx.cert    = OpenSSL::X509::Certificate.new(certificate)
+      _log.info '>>>>>>>>>>>>>>>>>>>>> 6'
 
       # net/http2 gem
       # https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/sending_notification_requests_to_apns?language=objc
       $apn ||= NetHttp2::Client.new(apn_host, ssl_context: ctx)
     end
+    _log.info '>>>>>>>>>>>>>>>>>>>>> 7'
     return $apn
   end
 
