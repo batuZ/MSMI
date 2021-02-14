@@ -23,6 +23,26 @@ module MSMI
 
     # 管理员用来签名的密钥
     config.x.m_key = IO.readlines('./config/keys/manager_key').first
+
+    # 获取当前操作系统 Rails.application.os
+    def os
+      @os ||= (
+        host_os = RbConfig::CONFIG['host_os']
+        case host_os
+          when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
+              :windows
+          when /darwin|mac os/
+              :macosx
+          when /linux/
+              :linux
+          when /solaris|bsd/
+              :unix
+          else
+              raise Error::WebDriverError, "unknown os: #{host_os.inspect}"
+        end
+        )
+    end
+    
   end
 end
 

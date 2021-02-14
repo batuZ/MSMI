@@ -150,12 +150,10 @@ def _log
 end
 
 #======================= apple apns =================================
-
-  def apn_client app_name
+  def apn_client1 app_name
     _log.info '>>>>>>>>>>>>>>>>>>>>> 3'
-
     if $apn.nil?
-    _log.info '>>>>>>>>>>>>>>>>>>>>> 4'
+      _log.info '>>>>>>>>>>>>>>>>>>>>> 4'
       if Rails.env.eql?('production')
         # 生产环境
         pem = "config/keys/apn/#{app_name}/product.pem"
@@ -167,29 +165,53 @@ end
         apn_host = "https://api.sandbox.push.apple.com:443"
         _log.info '>>>>>>>>>>>>>>>>>>>>> 5 development'
       end
-
-      return(p 'no pem file') unless FileTest::exist?(pem)
-
-   
-      # 把p12转成pem
-      # openssl pkcs12 -in aps_development.p12 -out ck_from_p12.pem -nodes
-
-      # 验证pem握手成功
-      # openssl s_client -connect api.development.push.apple.com:443 -cert "/Users/Batu/ck_from_p12.pem"
-      
-      certificate = File.read(pem)
-      ctx         = OpenSSL::SSL::SSLContext.new
-      ctx.key     = OpenSSL::PKey::RSA.new(certificate)
-      ctx.cert    = OpenSSL::X509::Certificate.new(certificate)
       _log.info '>>>>>>>>>>>>>>>>>>>>> 6'
-
-      # net/http2 gem
-      # https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/sending_notification_requests_to_apns?language=objc
-      $apn ||= NetHttp2::Client.new(apn_host, ssl_context: ctx)
+      $apn = Apnotic::Connection.new(url: apn_host, cert_path: pem)
+      $apn.on(:error) { |exception| _log.info ">>>>>>>>>>>>>>>>>>>>> 5 Exception has been raised: #{exception}" }
     end
     _log.info '>>>>>>>>>>>>>>>>>>>>> 7'
     return $apn
   end
+
+  # def apn_client app_name
+  #   _log.info '>>>>>>>>>>>>>>>>>>>>> 3'
+
+  #   if $apn.nil?
+  #   _log.info '>>>>>>>>>>>>>>>>>>>>> 4'
+  #     if Rails.env.eql?('production')
+  #       # 生产环境
+  #       pem = "config/keys/apn/#{app_name}/product.pem"
+  #       apn_host = "https://api.push.apple.com:443"
+  #       _log.info '>>>>>>>>>>>>>>>>>>>>> 5 production'
+  #     else
+  #       # 开发环境
+  #       pem = "config/keys/apn/#{app_name}/sandbox.pem"
+  #       apn_host = "https://api.sandbox.push.apple.com:443"
+  #       _log.info '>>>>>>>>>>>>>>>>>>>>> 5 development'
+  #     end
+
+  #     return(p 'no pem file') unless FileTest::exist?(pem)
+
+   
+  #     # 把p12转成pem
+  #     # openssl pkcs12 -in aps_development.p12 -out ck_from_p12.pem -nodes
+
+  #     # 验证pem握手成功
+  #     # openssl s_client -connect api.development.push.apple.com:443 -cert "/Users/Batu/ck_from_p12.pem"
+      
+  #     certificate = File.read(pem)
+  #     ctx         = OpenSSL::SSL::SSLContext.new
+  #     ctx.key     = OpenSSL::PKey::RSA.new(certificate)
+  #     ctx.cert    = OpenSSL::X509::Certificate.new(certificate)
+  #     _log.info '>>>>>>>>>>>>>>>>>>>>> 6'
+
+  #     # net/http2 gem
+  #     # https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/sending_notification_requests_to_apns?language=objc
+  #     $apn ||= NetHttp2::Client.new(apn_host, ssl_context: ctx)
+  #   end
+  #   _log.info '>>>>>>>>>>>>>>>>>>>>> 7'
+  #   return $apn
+  # end
 
   #======================= groups =================================
 

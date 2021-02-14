@@ -69,6 +69,7 @@ gem 'activestorage-aliyun'
 
 # for apple notification
 gem 'net-http2'
+gem 'apnotic'
 
 # 在centOS中rails需要Javascript runtime支持数据库操作
 install_if -> { RUBY_PLATFORM =~ /linux/ } do

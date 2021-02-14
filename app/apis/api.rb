@@ -4,7 +4,10 @@ class API < Grape::API
   helpers ApplicationHelper
 
 # ========================= APP =========================
-
+  # 用来测试守护程序的
+  # get :aaa do 
+  #   system("ps -ef | grep puma | grep -v grep | awk '{print $2}' | xargs -n1 kill -9")
+  # end
 
   desc '下载文件，拼接方式: [https://www.example.com/msmi_file/(固定部份)] + [preview/xxxx.jpg(消息中的部份)]', 
   tags: ['APP'], summary: '使用云存储时，下载聊天附件的统一接口', hidden: true
@@ -441,7 +444,9 @@ class API < Grape::API
 
   mount MessageAPI
   mount ManagerApi
-  
+
+  ApnPingJob.set(wait: 1.hour).perform_later('dongting') if Rails.application.os.eql?(:linux) # 后台备份数据库
+
   desc '处理未知请求', hidden: true
   route :any, '*path' do
     putf ">> #{params['path']} 没有找到接口 <<"
