@@ -49,7 +49,7 @@ RSpec.describe 'API', type: :request do
       user_id: 'user_3', 
       content: 'asdf',
       content_type: 'image',
-      file: fixture_file_upload('/Users/Batu/Pictures/katong_1/avatar_2.jpg','image/jpeg')
+      file: fixture_file_upload('/Users/zhangzhi/Pictures/katong_1/avatar_2.jpg','image/jpeg')
     }, headers:{'Msmi-Token' => token1}
     expect(_code).to be == 1000
     # ___show _content
